@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, Droplets, History, ImagePlus, LayoutDashboard, LogOut, Menu, Radio, RefreshCw, ShieldCheck, Thermometer, Upload, X} from 'lucide-react';
 import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid} from 'recharts';
 import {scenes, useBackground} from './backgrounds';
+import {temperatureScale} from './temperatureScale';
 import './style.css';
 import './temperature-range.css';
 import './navigation.css';
@@ -204,6 +205,7 @@ function App(){
   const humidity=device?.states.find(s=>s.property==='humidity');
   const latest=Math.max(temperature?.observed||0,humidity?.observed||0);
   const hasPoints=points.some(p=>p.temperature!==null||p.humidity!==null);
+  const tempScale=temperatureScale(points.flatMap(p=>p.temperature===null?[]:[p.temperature]));
   return <div className="spatial-app">
     <div className="room-backdrop">{!imageFailed&&<img src={background.url} alt="" onError={()=>setImageFailed(true)}/>}</div><div className="room-vignette"/>
     {logged&&<><button className="hamburger-button" aria-label="Abrir menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="dashboard-menu" onClick={()=>setMenuOpen(true)}><Menu size={22}/></button><Navigation open={menuOpen} onClose={()=>setMenuOpen(false)} page={page} onPage={setPage} onBackground={()=>setBackgroundOpen(true)} connected={connected} syncing={syncing} onRefresh={()=>void synchronize()} onLogout={()=>void logout()}/><BackgroundDialog open={backgroundOpen} onClose={()=>setBackgroundOpen(false)} background={background}/></>}
@@ -228,7 +230,7 @@ function App(){
             {chartError?<div className="chart-empty" role="alert">{chartError}</div>:!hasPoints?<div className="chart-empty">{historyLoading?'Carregando histórico…':'As medições aparecerão aqui assim que forem recebidas.'}</div>:
               <div className="chart-canvas"><ResponsiveContainer width="100%" height={208}><LineChart data={points} margin={{top:14,right:4,bottom:0,left:4}}>
                 <CartesianGrid stroke="rgba(255,255,255,.09)" vertical={false}/><XAxis dataKey="time" tickFormatter={t=>clock(Number(t))} minTickGap={50} tick={{fontSize:10,fill:'rgba(255,255,255,.55)'}} axisLine={false} tickLine={false}/>
-                <YAxis yAxisId="temperature" hide={mode==='humidity'} domain={['auto','auto']} tickFormatter={value=>number(Number(value))} tick={{fontSize:10,fill:'#f3c58e'}} axisLine={false} tickLine={false} width={60} unit="°"/>
+                <YAxis yAxisId="temperature" hide={mode==='humidity'} domain={tempScale.domain} ticks={tempScale.ticks} interval={0} tickFormatter={value=>number(Number(value))} tick={{fontSize:10,fill:'#f3c58e'}} axisLine={false} tickLine={false} width={60} unit="°"/>
                 <YAxis yAxisId="humidity" orientation="right" hide={mode==='temperature'} domain={[0,100]} tick={{fontSize:10,fill:'#91dcd8'}} axisLine={false} tickLine={false} width={40} unit="%"/>
                 <Tooltip labelFormatter={t=>time(Number(t))} contentStyle={{background:'rgba(24,30,34,.96)',border:'1px solid rgba(255,255,255,.2)',borderRadius:14,fontSize:11,color:'#fff'}} formatter={(v:number,name:string)=>[number(v)+(name==='Temperatura'?' °C':'%'),name]}/>
                 {mode!=='humidity'&&<Line yAxisId="temperature" name="Temperatura" type="linear" dataKey="temperature" stroke="#f1c791" strokeWidth={2.3} dot={false} connectNulls={false} isAnimationActive={false}/>}
