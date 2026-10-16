@@ -111,7 +111,8 @@ function TemperatureRangeCard({deviceId,updatedAt}:{deviceId:string|undefined;up
     return()=>{active=false;controller.abort();clearInterval(timer)};
   },[deviceId,hours,updatedAt]);
   return <section className="glass-well temperature-range" aria-label="Extremos de temperatura">
-    <div className="range-heading"><h2><Thermometer size={16}/>Temperatura</h2><GlassSelect label="Período da mínima e máxima" value={String(hours)} onChange={value=>setHours(Number(value))} options={[{value:'1',label:'1h'},{value:'6',label:'6h'},{value:'24',label:'24h'},{value:'168',label:'7 dias'},{value:'720',label:'30 dias'}]}/></div>
+    <div className="range-heading"><h2><Thermometer size={16}/>Temperatura</h2></div>
+    <div className="range-options" role="group" aria-label="Período da mínima e máxima">{[[1,'1h'],[6,'6h'],[24,'24h'],[168,'7d'],[720,'30d']].map(([value,label])=><button type="button" key={value} aria-pressed={hours===value} onClick={()=>setHours(Number(value))}>{label}</button>)}</div>
     <div className="range-values" aria-live="polite" aria-busy={loading}><div><span>Mínima</span><strong>{number(range.min)}<small>°C</small></strong></div><div><span>Máxima</span><strong>{number(range.max)}<small>°C</small></strong></div></div>
     <p className="range-note" role={error?'alert':'status'}>{loading?'Carregando…':error?'Falha ao consultar histórico':range.min===undefined?'Sem medições no período':'Registradas no período'}</p>
   </section>;

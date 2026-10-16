@@ -70,3 +70,9 @@ Validação: compilação TypeScript/Vite concluída; seleção do período e ex
 ### Temperatura externa e seletores
 
 Incluída consulta autenticada à Open-Meteo, cache de dez minutos, validação de leituras e indicação de indisponibilidade. Verificados seis cenários de teste: autenticação/cache, falha com dado antigo e rejeição de quatro valores inválidos. Consulta real retornou 26,1 °C; endpoint em produção validado com certificado HTTPS local confiado explicitamente e login administrativo. Confirmados menus de período/sensor, seleção, Escape e versão móvel sem rolagem horizontal. Evidências: weather-selectors-desktop.jpg e weather-mobile.jpg. Capturas usam cópia local das medições internas; temperatura externa é consultada no provedor real.
+
+### Visual sem gradientes e períodos lado a lado
+
+Na branch `codex/menu-e-papeis-de-parede`, o menu lateral, o botão de abrir menu e os seletores usam fundos planos. O card de extremos passou a mostrar 1h, 6h, 24h, 7d e 30d como botões visíveis na mesma linha; histórico e filtros usam o mesmo estilo de seleção. Mantida a navegação por teclado e a indicação acessível da opção selecionada.
+
+Validação: TypeScript/Vite compilou com sucesso; conferidas seleção de 6h e 30d, abertura/fechamento do menu e dimensões de 1440px e 390px em prévia isolada com dados de layout. As cinco opções permaneceram alinhadas, sem rolagem horizontal no celular. Estilos computados confirmaram `background-image: none` no menu e na opção selecionada. Nenhum erro JavaScript registrado. A prévia não acessa banco operacional, credenciais ou comandos Tuya; o clima externo fica indisponível nessa prévia. Evidências: clean-selectors-desktop.jpg, clean-selectors-mobile.jpg e clean-navigation.jpg.
