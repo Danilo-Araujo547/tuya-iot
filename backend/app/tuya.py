@@ -71,6 +71,8 @@ class TuyaHTTP:
         cfg = device.config
         adapter = cfg.get("command", {})
         if adapter.get("kind") == "ir":
+            if adapter.get('profile') == 'tuya_ac_v2':
+                return self.control(device, {'type': 'power', 'value': power})
             # Exact body and path are provisioned after validating this remote.
             return self.request("POST", adapter["path"], adapter["on" if power else "off"])
         return self.request("POST", f"/v1.0/devices/{device.id}/commands",
@@ -83,6 +85,25 @@ class TuyaHTTP:
                 raise ValueError("invalid_device_status_response")
             return {"status": status}
         return self.request("GET", f"/v1.0/devices/{device.id}")
+
+    def control(self, device, action):
+        cfg = device.config['command']
+        if cfg.get('profile')=='tuya_standard_ir' and action['type']=='ir_key':
+            return self.request('POST', f"/v2.0/infrareds/{cfg['infrared_id']}/remotes/{cfg['remote_id']}/command",
+                                {'categoryId':cfg['category_id'],'remoteIndex':cfg['remote_index'],'key':action['value']})
+        if cfg.get('profile') != 'tuya_ac_v2':
+            raise Rejected('unsupported_control_profile')
+        code = {'power': 'power', 'temperature': 'temp', 'mode': 'mode', 'fan': 'wind'}[action['type']]
+        value = int(action['value'])
+        return self.request('POST', f"/v2.0/infrareds/{cfg['infrared_id']}/air-conditioners/{cfg['remote_id']}/command", {'code': code, 'value': value})
+
+    def read_control(self, device):
+        cfg = device.config['command']
+        return self.request('GET', f"/v2.0/infrareds/{cfg['infrared_id']}/remotes/{cfg['remote_id']}/ac/status")
+
+    def read_keys(self, device):
+        cfg=device.config['command']
+        return self.request('GET', f"/v2.0/infrareds/{cfg['infrared_id']}/remotes/{cfg['remote_id']}/keys")
 
 
 class DurablePulsar(TuyaOpenPulsar):

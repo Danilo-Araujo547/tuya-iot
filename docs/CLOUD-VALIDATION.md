@@ -46,3 +46,17 @@ O projeto e o asset informados foram mantidos como contexto; as rotas consultada
 ## Correção de atualização do dashboard
 
 Uma consulta posterior retornou temperatura bruta `110` (**11,0 °C**) enquanto o banco ainda guardava −20,0 °C. O botão antigo apenas relia o banco e a reconciliação era horária. O botão agora usa `POST /api/v1/devices/sync` para consultar a Tuya e devolver os valores já persistidos. O fluxo autenticado foi testado contra a API real, retornando 11,0 °C e 0%. Na instalação local, a reconciliação automática foi reduzida para cinco minutos. Uma conexão Pulsar aceita, isoladamente, não comprova que as mudanças do sensor estão chegando por eventos.
+
+## Sensor real Data Center e teste de TV — 16/10/2026
+
+O dispositivo `eb1812291284078184ksdq` (LCD temperature and humidity universal remote control, categoria `wsdykq`) foi consultado na mesma conta Tuya e cadastrado com as funções de sensoriamento e infravermelho. O hub IR é o próprio Device ID; o controle virtual TV Samsung é `eb475e13ac027c8e1d8zff`, categoria 2 e biblioteca 112034017.
+
+A especificação real usa `temp_current` com escala 1 e unidade Celsius e `humidity_value` com escala 0 e unidade %. A primeira consulta retornou 248 e 74, normalizados como 24,8 °C e 74%. Leituras posteriores variaram; não são valores fixados pela aplicação. A consulta de detalhe confirmou `online=true`. O sensor virtual anterior e seu histórico foram mantidos; ao recarregar a interface, o sensor real aparece primeiro.
+
+A lista do controle retornou 21 teclas padrão e `duplicate_power=true`. Não há controle de ar-condicionado cadastrado nesse hub. O perfil `tuya_standard_ir` permite enviar apenas teclas consultadas da Tuya. Energia é apresentada como alternância e não como comandos discretos de ligar/desligar. Não há status físico da TV nem ajustes de temperatura nesse perfil.
+
+Com autorização do usuário, foi enviado **um único comando `Volume-`**, com chave de idempotência estável `tv-volume-down-validation-20261016`. A Tuya retornou `result=true`, e o usuário confirmou que o volume da TV diminuiu. A auditoria registra o comando `6980af27-903d-4c99-b8b2-dc547e1d600e`; o cadastro e a saúde da integração guardam a confirmação física dessa tecla. Consultas e reinícios posteriores não reenviaram o comando. As outras teclas estão disponíveis conforme a biblioteca; não foram todas testadas fisicamente.
+
+A regra de exemplo de 27 °C foi apontada para o sensor real e permanece desativada e sem ação. Consultas sem timestamp de origem seguem identificadas como horário de consulta. Não se presume confirmação temporal de uma medição física apenas porque a leitura Cloud funcionou.
+
+Configuração exportada sem credenciais: `config/data-center.validated.json`. Nenhuma chave Tuya nem local_key foi exposta no frontend ou no pacote.

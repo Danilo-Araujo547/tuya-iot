@@ -1,12 +1,12 @@
 # Tuya IoT — Ambiente
 
-Aplicação local para temperatura, umidade, histórico e comandos de energia. Backend FastAPI, dashboard React/TypeScript e PostgreSQL. Sem automações nesta versão.
+Aplicação local para temperatura, umidade, histórico e comandos de energia. Backend FastAPI, dashboard React/TypeScript e PostgreSQL. Inclui regras persistentes por temperatura e horário e painel modular de controle infravermelho. Consulte `docs/AUTOMATIONS.md` para cadastro dos dispositivos, funcionamento e limites.
 
 ## Visual e imagem de fundo
 
-O dashboard usa a referência Spatial Climate: mostrador circular, cartões de vidro translúcido e navegação flutuante. **Sala Solar**, **Estúdio** e **Luz Nórdica** usam as três fotografias Unsplash fornecidas no HTML de referência; Sala Solar é o padrão inicial.
+O dashboard usa a referência Spatial Climate: mostrador circular, cartões de vidro translúcido e menu lateral recolhível pelo ícone de hambúrguer. As páginas, atualização, conta e personalização ficam nesse menu. **Sala Solar**, **Estúdio** e **Luz Nórdica** usam as três fotografias Unsplash fornecidas no HTML de referência; Sala Solar é o padrão inicial.
 
-Use **Trocar fundo** para escolher outro cenário ou uma foto do computador. São aceitas imagens JPG, PNG e WebP de até 12 MB. A foto é redimensionada para até 1920 pixels e convertida em JPEG antes de ser salva no armazenamento local do navegador. A foto não é enviada à API nem à Tuya. A preferência é individual por navegador e endereço de acesso; limpar os dados do site a remove. O botão **Restaurar fundo padrão** volta à Sala Solar. As fotografias padrão precisam de conexão com `images.unsplash.com`; em caso de falha, um fundo degradê mantém a interface utilizável.
+Abra **Menu → Papel de parede** para escolher um cenário padrão ou enviar uma foto JPG, PNG ou WebP de até 12 MB. O navegador prepara um JPEG de até 1920 pixels e 3 MB; a API valida, remove metadados e salva a imagem no PostgreSQL. A galeria guarda até 20 imagens distintas e a escolha ativa é compartilhada entre navegadores autenticados, com sincronização em até 30 segundos ou ao voltar à janela. As imagens ficam incluídas no backup do banco e sobrevivem a reinícios; não dependem de localStorage. A imagem não é enviada à Tuya. **Restaurar fundo padrão** volta à Sala Solar sem apagar a galeria. As fotografias padrão precisam de conexão com `images.unsplash.com`; em caso de falha, um fundo degradê mantém a interface utilizável.
 
 O mostrador e os cartões continuam usando os estados reais do backend. O gráfico oferece temperatura e umidade juntas ou separadas, com eixos e unidades distintos; os valores virtuais continuam identificados como simulação na Tuya Cloud.
 
@@ -102,3 +102,6 @@ O frontend de desenvolvimento precisa de proxy HTTPS para a API: cookies de sess
 A referência padrão é Votuporanga, nas coordenadas -20.42278, -49.97278. Para mudar, configure `WEATHER_LATITUDE` e `WEATHER_LONGITUDE` no ambiente do backend. O dashboard exibe apenas “Temperatura externa”, sem cidade ou estado. A fonte é creditada no próprio card. Documentação: https://open-meteo.com/en/docs . A API pública gratuita é destinada a uso não comercial; em implantação comercial, adequar o plano e endpoint ao contrato do provedor.
 
 Os seletores de sensor e período usam menus próprios com navegação por teclado (setas, Home, End e Escape), indicação da opção ativa e fechamento ao clicar fora.
+
+
+O sensor real **Sensor temperatura Data Center** está cadastrado nas duas funções, e a TV Samsung vinculada está disponível no menu **Controle IR**. Volume − foi validado fisicamente pelo usuário. Consulte `docs/CLOUD-VALIDATION.md` para a evidência e `config/data-center.validated.json` para a configuração sem credenciais. A regra de exemplo continua desativada; o controle do ar-condicionado depende de seu próprio remote_id.

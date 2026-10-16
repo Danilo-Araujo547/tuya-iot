@@ -16,6 +16,9 @@ from .commands import submit, serialize
 from .tuya import TuyaHTTP
 from .weather import outdoor_weather
 from .appearance import router as appearance_router
+from .controls import router as controls_router
+from .automations import router as automations_router
+from .control_profiles import capabilities
 
 
 @asynccontextmanager
@@ -29,6 +32,8 @@ app = FastAPI(title="Tuya IoT", version="1.0.0", lifespan=lifespan,
               openapi_url="/api/v1/openapi.json", docs_url="/api/v1/docs", redoc_url=None)
 PREFIX = "/api/v1"
 app.include_router(appearance_router)
+app.include_router(controls_router)
+app.include_router(automations_router)
 
 
 @app.get(PREFIX + "/weather/current")
@@ -92,7 +97,7 @@ def snapshot():
         states = db.query(State).all()
         ranked = select(Command.id, func.row_number().over(partition_by=Command.device_id,
                         order_by=(Command.created.desc(), Command.id.desc())).label("rank")).subquery()
-        latest = {c.device_id: {"id": c.id, "power": c.power, "status": c.status, "created": c.created}
+        latest = {c.device_id: serialize(c)
                   for c in db.execute(select(Command).join(ranked, Command.id == ranked.c.id)
                                       .where(ranked.c.rank == 1)).scalars()}
         result = []
@@ -101,15 +106,16 @@ def snapshot():
             values = [{"property": state.property, "value": state.value, "unit": state.unit,
                        "observed": state.observed, "received": state.received, "source": state.source,
                        "stale": time.time() - state.observed > interval * 3,
-                       "observation_time_known": not device.config.get("cloud_snapshot_without_timestamp", False)}
+                       "observation_time_known": state.time_known and not device.config.get("cloud_snapshot_without_timestamp", False)}
                       for state in states if state.device_id == device.id]
             online = next((s for s in values if s["property"] == "online"), None)
             result.append({"id": device.id, "name": device.name,
                            "capabilities": sorted({m["property"] for m in device.config.get("properties", {}).values()}),
                            "controllable": device.config.get("command", {}).get("validated", False),
+                           "control": capabilities(device),
                            "kind": device.config.get("command", {}).get("kind", "sensor"),
                            "virtual": device.config.get("virtual", False),
-                           "cloud_snapshot_without_timestamp": device.config.get("cloud_snapshot_without_timestamp", False),
+                           "cloud_snapshot_without_timestamp": device.config.get("cloud_snapshot_without_timestamp", False) or any(not s['observation_time_known'] for s in values if s['property'] in ('temperature','humidity')),
                            "last_command": latest.get(device.id),
                            "connectivity": "desconhecida" if not online or online["stale"] else ("online" if online["value"] else "offline"),
                            "states": values})

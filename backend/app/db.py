@@ -42,6 +42,7 @@ class Measurement(Base):
     unit: Mapped[str] = mapped_column(String, default="")
     observed: Mapped[float] = mapped_column(Float, index=True)
     received: Mapped[float] = mapped_column(Float)
+    time_known: Mapped[bool] = mapped_column(Boolean, default=True)
     __table_args__ = (Index("ix_history", "device_id", "property", "observed", "id"),)
 
 
@@ -54,6 +55,7 @@ class State(Base):
     observed: Mapped[float] = mapped_column(Float)
     received: Mapped[float] = mapped_column(Float)
     source: Mapped[str] = mapped_column(String, default="reportado")
+    time_known: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Command(Base):
@@ -62,12 +64,35 @@ class Command(Base):
     device_id: Mapped[str] = mapped_column(String)
     actor: Mapped[str] = mapped_column(String)
     key: Mapped[str] = mapped_column(String)
-    power: Mapped[bool] = mapped_column(Boolean)
+    power: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(String, default="solicitado")
     response: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created: Mapped[float] = mapped_column(Float, default=time.time, index=True)
     updated: Mapped[float] = mapped_column(Float, default=time.time)
     __table_args__ = (UniqueConstraint("actor", "key"), Index("ix_commands_latest", "device_id", "created"))
+
+
+class Automation(Base):
+    __tablename__ = "automations"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=uid)
+    name: Mapped[str] = mapped_column(String)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    definition: Mapped[dict] = mapped_column(JSON)
+    runtime: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class AutomationRun(Base):
+    __tablename__ = "automation_runs"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=uid)
+    rule_id: Mapped[str] = mapped_column(String, index=True)
+    occurrence: Mapped[str] = mapped_column(String)
+    definition: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String, default="em execução")
+    results: Mapped[list] = mapped_column(JSON, default=list)
+    created: Mapped[float] = mapped_column(Float, default=time.time, index=True)
+    __table_args__ = (UniqueConstraint("rule_id", "occurrence"),)
 
 
 class Session(Base):

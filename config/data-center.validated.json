@@ -1,0 +1,129 @@
+[
+  {
+    "id": "eb1812291284078184ksdq",
+    "name": "Sensor temperatura Data Center",
+    "managed_by_ui": true,
+    "api_family": "legacy",
+    "expected_interval": 300,
+    "virtual": false,
+    "cloud_snapshot_without_timestamp": false,
+    "properties": {
+      "temp_current": {
+        "property": "temperature",
+        "scale": 1,
+        "unit": "°C"
+      },
+      "humidity_value": {
+        "property": "humidity",
+        "scale": 0,
+        "unit": "%"
+      }
+    },
+    "command": {
+      "kind": "ir",
+      "profile": "tuya_standard_ir",
+      "infrared_id": "eb1812291284078184ksdq",
+      "remote_id": "eb475e13ac027c8e1d8zff",
+      "validated": false,
+      "keys_enabled": true,
+      "keys_validated": true,
+      "keys": [
+        {
+          "key": "Power",
+          "label": "On/Off"
+        },
+        {
+          "key": "Channel+",
+          "label": "Channel Up"
+        },
+        {
+          "key": "Channel-",
+          "label": "Channel Down"
+        },
+        {
+          "key": "Menu",
+          "label": "Menu"
+        },
+        {
+          "key": "Up",
+          "label": "Navigate Up"
+        },
+        {
+          "key": "Down",
+          "label": "Navigate Down"
+        },
+        {
+          "key": "Left",
+          "label": "Navigate Left"
+        },
+        {
+          "key": "Right",
+          "label": "Navigate Right"
+        },
+        {
+          "key": "Volume+",
+          "label": "Volume Up"
+        },
+        {
+          "key": "Volume-",
+          "label": "Volume Down"
+        },
+        {
+          "key": "0",
+          "label": "Channel 0"
+        },
+        {
+          "key": "1",
+          "label": "Channel 1"
+        },
+        {
+          "key": "2",
+          "label": "Channel 2"
+        },
+        {
+          "key": "3",
+          "label": "3"
+        },
+        {
+          "key": "4",
+          "label": "4"
+        },
+        {
+          "key": "5",
+          "label": "5"
+        },
+        {
+          "key": "6",
+          "label": "6"
+        },
+        {
+          "key": "7",
+          "label": "7"
+        },
+        {
+          "key": "8",
+          "label": "8"
+        },
+        {
+          "key": "9",
+          "label": "9"
+        },
+        {
+          "key": "Back",
+          "label": "Back"
+        }
+      ],
+      "category_id": 2,
+      "remote_index": 112034017,
+      "duplicate_power": true,
+      "physical_tests": {
+        "Volume-": {
+          "confirmed": true,
+          "at": 1792150128.4006526,
+          "command_id": "6980af27-903d-4c99-b8b2-dc547e1d600e",
+          "source": "user_confirmation"
+        }
+      }
+    }
+  }
+]

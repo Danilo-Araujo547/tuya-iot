@@ -20,7 +20,7 @@ def migrate():
         with engine.begin() as conn:
             conn.execute(text("SELECT pg_advisory_xact_lock(42916701)"))
             conn.execute(text("CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY)"))
-            for version, filename in [('001', '001_initial.sql'), ('002', '002_appearance.sql')]:
+            for version, filename in [('001', '001_initial.sql'), ('002', '002_appearance.sql'), ('003', '003_automations.sql')]:
                 if not conn.execute(text("SELECT 1 FROM schema_migrations WHERE version=:version"), {'version': version}).first():
                     sql = (Path(__file__).parent.parent / 'migrations' / filename).read_text()
                     for statement in sql.split(';'):
@@ -60,14 +60,29 @@ def load_devices(path):
             if command.get("kind") not in ("device", "ir"):
                 raise ValueError("Adaptador inválido")
             if command["kind"] == "ir":
-                if not re.fullmatch(r"/v[12]\.0/infrareds/[A-Za-z0-9_/-]+", command.get("path", "")):
-                    raise ValueError("Caminho IR inválido")
-                if not isinstance(command.get("on"), dict) or not isinstance(command.get("off"), dict):
-                    raise ValueError("Informe os corpos IR on/off validados")
+                if command.get('profile') in ('tuya_ac_v2','tuya_standard_ir'):
+                    for key in ('infrared_id', 'remote_id'):
+                        if not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', command.get(key, '')):
+                            raise ValueError('Informe os IDs do hub e controle virtual')
+                    ac = command.get('ac', {})
+                    bounds = ac.get('temperature', {})
+                    if command.get('profile')=='tuya_ac_v2' and ac.get('validated') and not (type(bounds.get('min')) is int and type(bounds.get('max')) is int and 10 <= bounds['min'] < bounds['max'] <= 35):
+                        raise ValueError('Informe os limites de temperatura validados')
+                    if command.get('profile')=='tuya_standard_ir' and command.get('keys_validated'):
+                        if type(command.get('category_id')) is not int or type(command.get('remote_index')) is not int or not isinstance(command.get('keys'),list):
+                            raise ValueError('Informe os metadados de teclas consultados na Tuya')
+                else:
+                    if not re.fullmatch(r"/v[12]\.0/infrareds/[A-Za-z0-9_/-]+", command.get("path", "")):
+                        raise ValueError("Caminho IR inválido")
+                    if not isinstance(command.get("on"), dict) or not isinstance(command.get("off"), dict):
+                        raise ValueError("Informe os corpos IR on/off validados")
             elif not command.get("code"):
                 raise ValueError("Informe o código de comando")
     with DB.begin() as db:
         for row in entries:
+            prior = db.get(Device, row['id'])
+            if prior and prior.config.get('managed_by_ui'):
+                continue
             db.merge(Device(id=row["id"], name=row["name"], config=row))
     return len(entries)
 

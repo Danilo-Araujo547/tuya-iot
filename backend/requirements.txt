@@ -8,3 +8,4 @@ argon2-cffi==23.1.0
 tuya-connector-python==0.1.2
 pytest==9.0.3
 Pillow==12.3.0
+tzdata==2026.5

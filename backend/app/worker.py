@@ -4,7 +4,7 @@ import signal
 import threading
 import time
 from sqlalchemy import delete, update
-from .db import DB, Device, Event, Command, Measurement, Session, health
+from .db import DB, Device, Event, Command, Measurement, Session, AutomationRun, health
 from .events import ingest, process_one
 from .tuya import TuyaHTTP, DurablePulsar
 from .config import CALLS_PER_MINUTE, RECONCILE_SECONDS
@@ -18,7 +18,7 @@ def reconcile(api, stop=None):
     failures = 0
     for device in devices:
         # Remote IR IDs are not generic Tuya devices. Only synchronize real hubs/sensors.
-        if device.config.get("command", {}).get("kind") == "ir":
+        if device.config.get("command", {}).get("kind") == "ir" and not device.config.get('properties'):
             continue
         try:
             detail = api.read_status(device)
@@ -29,7 +29,8 @@ def reconcile(api, stop=None):
                 return
             continue
         at = time.time()
-        ingest({"devId": device.id, "ts": int(at * 1000), "status": detail.get("status", [])},
+        ingest({"devId": device.id, "ts": int(at * 1000), "status": detail.get("status", []),
+                '_cloud_query_without_time': any(not item.get('t') for item in detail.get('status', []))},
                f"sync:{device.id}:{at}")
         if isinstance(detail.get("online"), bool):
             ingest({"bizCode": "online" if detail["online"] else "offline",
@@ -57,6 +58,8 @@ def maintenance():
                                       Event.payload_pruned.is_(False)).values(payload={}, payload_pruned=True))
         db.execute(delete(Event).where(Event.status == "processed", Event.received < now - 90 * 86400))
         db.execute(delete(Command).where(Command.created < now - 180 * 86400))
+        db.execute(delete(AutomationRun).where(AutomationRun.created < now - 180 * 86400))
+        db.execute(update(AutomationRun).where(AutomationRun.status == 'em execução', AutomationRun.created < now - 120).values(status='resultado desconhecido'))
         db.execute(delete(Session).where(Session.expires < now))
         # An interrupted request must never be replayed automatically.
         db.execute(update(Command).where(Command.status == "solicitado", Command.created < now - 60)
@@ -74,13 +77,17 @@ def main():
     sync_thread = threading.Thread(target=sync_loop, args=(api, stop, sync), daemon=True)
     sync_thread.start()
     sync.set()
-    next_sync = next_maintenance = 0
+    next_sync = next_maintenance = next_automation = 0
     while not stop.is_set():
         try:
             health("worker", {"alive": True})
             for _ in range(100):
                 if not process_one():
                     break
+            if time.time() >= next_automation:
+                from .automations import tick
+                tick(api)
+                next_automation = time.time() + 5
             if time.time() >= next_sync:
                 sync.set()
                 next_sync = time.time() + RECONCILE_SECONDS

@@ -70,13 +70,16 @@ def process_one():
                 device = db.get(Device, data.get("devId", payload.get("devId", "")))
                 if not device:
                     raise ValueError("unknown_device")
+                time_known = not payload.get('_cloud_query_without_time', False) and any(v is not None for v in (
+                    data.get('ts'), payload.get('ts'), payload.get('t'), *(item.get('t') for item in data.get('status', []))))
                 for prop, value, unit, observed in normalize(payload, event.received, device.config):
                     db.add(Measurement(event_id=event.id, device_id=device.id, property=prop,
-                                       value=value, unit=unit, observed=observed, received=event.received))
+                                       value=value, unit=unit, observed=observed, received=event.received, time_known=time_known))
                     state = db.get(State, (device.id, prop))
                     if not state or observed >= state.observed:
                         db.merge(State(device_id=device.id, property=prop, value=value, unit=unit,
-                                       observed=observed, received=event.received, source="reportado"))
+                                       observed=observed, received=event.received, source="reportado",
+                                       time_known=time_known))
                 db.flush()
             event.status, event.error = "processed", None
         except Exception as exc:

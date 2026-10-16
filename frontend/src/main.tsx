@@ -1,15 +1,18 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Activity, ArrowUpRight, Check, ChevronDown, Cloud, History, ImagePlus, LayoutDashboard, LogOut, Menu, Moon, Power, Radio, RefreshCw, ShieldCheck, Sun, Thermometer, Upload, X, Zap} from 'lucide-react';
+import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, History, ImagePlus, LayoutDashboard, LogOut, Menu, Moon, Power, Radio, RefreshCw, ShieldCheck, Sun, Thermometer, Upload, X, Zap} from 'lucide-react';
 import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid} from 'recharts';
 import {scenes, useBackground} from './backgrounds';
 import './style.css';
 import './temperature-range.css';
 import './navigation.css';
+import {GlassSelect} from './GlassSelect';
+import {AutomationPanel, ControlPanel} from './features';
+import './features.css';
 
-type Reading = {property:string; value:number|boolean; unit:string; observed:number; source:string; stale:boolean; observation_time_known?:boolean};
+type Reading = {property:string; value:number|boolean|string; unit:string; observed:number; source:string; stale:boolean; observation_time_known?:boolean};
 type Device = {id:string; name:string; capabilities:string[]; controllable:boolean; kind:string; connectivity:string; states:Reading[]; last_command?:Command|null; virtual?:boolean; cloud_snapshot_without_timestamp?:boolean};
-type Command = {id:string; status:string; power:boolean; created:number};
+type Command = {id:string; status:string; power:boolean|null; created:number};
 type Point = {time:number; value:number|null; min?:number|null; max?:number|null};
 type ChartPoint = {time:number; temperature:number|null; humidity:number|null};
 type Diagnostics = {tuya_connected:boolean; pending:number; dead:number; commands_unknown:number; oldest_pending:number|null; http_calls_window:number; health:Record<string, Record<string, unknown>>};
@@ -46,30 +49,6 @@ function Dial({temperature}:{temperature:number|undefined}) {
 }
 
 type Weather = {temperature:number;observed:number;stale:boolean;is_day:boolean;weather_code:number|null;source:string};
-
-function GlassSelect({label,value,options,onChange}:{label:string;value:string;options:{value:string;label:string}[];onChange:(value:string)=>void}) {
-  const [open,setOpen]=useState(false), root=useRef<HTMLDivElement>(null), trigger=useRef<HTMLButtonElement>(null);
-  const id=React.useId();
-  useEffect(()=>{
-    if(!open)return;
-    const outside=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))setOpen(false)};
-    document.addEventListener('pointerdown',outside);
-    root.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
-    return()=>document.removeEventListener('pointerdown',outside);
-  },[open]);
-  return <div className="glass-select" ref={root} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))setOpen(false)}} onKeyDown={e=>{
-    if(e.key==='Escape'){e.preventDefault();setOpen(false);trigger.current?.focus()}
-    if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){
-      e.preventDefault();if(!open){setOpen(true);return}
-      const items=Array.from(root.current?.querySelectorAll<HTMLButtonElement>('[role="option"]')||[]);
-      const current=items.indexOf(document.activeElement as HTMLButtonElement);
-      const next=e.key==='Home'?0:e.key==='End'?items.length-1:(current+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;
-      items[next]?.focus();
-    }
-  }}><button ref={trigger} type="button" className="glass-select-trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={id} onClick={()=>setOpen(!open)}><span>{options.find(o=>o.value===value)?.label||'Selecione um sensor'}</span><ChevronDown size={12}/></button>
-    {open&&<div id={id} role="listbox" aria-label={label} className="glass-select-menu">{options.map(option=><button type="button" role="option" aria-selected={option.value===value} key={option.value} onClick={()=>{onChange(option.value);setOpen(false);trigger.current?.focus()}}><span>{option.label}</span>{option.value===value&&<Check size={13}/>}</button>)}</div>}
-  </div>;
-}
 
 function OutdoorCard(){
   const [weather,setWeather]=useState<Weather|null>(null),[error,setError]=useState(false);
@@ -144,7 +123,7 @@ function Navigation({open,onClose,page,onPage,onBackground,connected,syncing,onR
   const navigate=(key:string)=>{onPage(key);onClose()};
   return <dialog id="dashboard-menu" ref={dialog} className="navigation-drawer" aria-labelledby="navigation-title" onCancel={onClose} onClose={onClose} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
     <div className="drawer-heading"><h2 id="navigation-title">Seu ambiente</h2><button className="icon-button" aria-label="Fechar menu" onClick={onClose}><X size={20}/></button></div>
-    <nav aria-label="Páginas do dashboard"><button aria-current={page==='overview'?'page':undefined} onClick={()=>navigate('overview')}><LayoutDashboard size={18}/>Visão geral</button><button aria-current={page==='history'?'page':undefined} onClick={()=>navigate('history')}><History size={18}/>Histórico</button><button aria-current={page==='diagnostics'?'page':undefined} onClick={()=>navigate('diagnostics')}><Activity size={18}/>Diagnóstico</button></nav>
+    <nav aria-label="Páginas do dashboard"><button aria-current={page==='overview'?'page':undefined} onClick={()=>navigate('overview')}><LayoutDashboard size={18}/>Visão geral</button><button aria-current={page==='history'?'page':undefined} onClick={()=>navigate('history')}><History size={18}/>Histórico</button><button aria-current={page==='diagnostics'?'page':undefined} onClick={()=>navigate('diagnostics')}><Activity size={18}/>Diagnóstico</button><button aria-current={page==='automations'?'page':undefined} onClick={()=>navigate('automations')}><CalendarClock size={18}/>Automações</button><button aria-current={page==='control'?'page':undefined} onClick={()=>navigate('control')}><Snowflake size={18}/>Controle IR</button></nav>
     <div className="drawer-section"><span>PERSONALIZAR</span><button onClick={()=>{onClose();onBackground()}}><ImagePlus size={18}/>Papel de parede</button></div>
     <div className="drawer-section"><span>CONEXÃO E CONTA</span><button disabled={syncing} onClick={()=>{onRefresh();onClose()}}><RefreshCw size={18} className={syncing?'spinning':''}/>{syncing?'Consultando…':'Atualizar dados'}</button><button onClick={()=>{onClose();onLogout()}}><LogOut size={18}/>Sair da conta</button></div>
     <div className={'drawer-status '+(connected?'connected':'')}><i/>{connected?'Dashboard conectado':'Reconectando…'}</div>
@@ -186,7 +165,7 @@ function App(){
     void tick();const timer=setInterval(tick,15000);return()=>clearInterval(timer);
   },[logged]);
   const sensors=devices.filter(d=>d.capabilities.includes('temperature')||d.capabilities.includes('humidity'));
-  const controlled=devices.filter(d=>d.controllable||d.kind==='ir'||d.kind==='device');
+  const controlled=devices.filter(d=>d.controllable||d.kind==='device');
   useEffect(()=>{if(!selected&&sensors.length)setSelected(sensors[0].id)},[devices,selected]);
   const loadHistory=useCallback(async()=>{
     if(!selected||!logged)return;
@@ -232,7 +211,7 @@ function App(){
     {checking?<div className="glass-well loading"><Radio size={22}/>Conectando ao seu espaço…</div>:!logged?<Login onLogin={()=>setLogged(true)}/>:<div className="spatial-layout">
       {error&&<div className="error" role="alert">{error}</div>}
       {imageFailed&&<div className="image-notice">A imagem não carregou. Você pode escolher outro cenário ou uma foto sua.</div>}
-      {page!=='diagnostics'&&<main className={'spatial-window '+(page==='history'?'history-view':'')}>
+      {(page==='overview'||page==='history')&&<main className={'spatial-window '+(page==='history'?'history-view':'')}>
         {page==='overview'&&<section className="glass-well thermostat-panel">
           <div className="panel-header-tag"><span>Clima interno</span><span className="room-badge">{device?.virtual?'Sensor virtual':'Sensor principal'}</span></div>
           <Dial temperature={temperature?Number(temperature.value):undefined}/>
@@ -271,6 +250,8 @@ function App(){
           {d.kind==='ir'&&<small>O infravermelho não confirma o estado físico.</small>}
         </article>;
       })}</section>}
+      {page==='automations'&&<AutomationPanel api={api} devices={devices}/>}
+      {page==='control'&&<ControlPanel api={api} onRefresh={refresh}/>}
       {page==='diagnostics'&&<main className="spatial-window diagnostic-window"><section className="glass-well diagnostic">
         <div className="chart-heading"><div><p className="eyebrow">SAÚDE DA CONEXÃO</p><h2>Seu ambiente, conectado.</h2></div><Activity size={23}/></div>
         {diagnostics?<><div className="diagnostic-grid">{[

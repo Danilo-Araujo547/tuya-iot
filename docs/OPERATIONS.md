@@ -41,3 +41,13 @@ Preencha um relatório protegido com modelo e IDs dos dispositivos, região, ser
 - Confirmar que portas do banco/API não são acessíveis fora da rede Docker e que HTTPS é confiável nos clientes VPN.
 
 Somente após esses itens marque a implantação como homologada. A suíte com transporte simulado não comprova permissões ou execução física na Tuya.
+
+## Papéis de parede persistentes
+
+A migração 002 cria `appearance` e `wallpapers`. A primeira mantém a escolha global do dashboard, e a segunda guarda os JPEGs como BYTEA no PostgreSQL. API e worker continuam sem gravar arquivos no contêiner: o volume persistente do PostgreSQL é suficiente. O dump diário inclui imagens e preferência; uma restauração recupera ambos. As imagens não expiram com a retenção de medições e eventos. A galeria tem limite de 20 imagens distintas, com deduplicação pelo conteúdo. Para usar a nova versão, execute o serviço `migrate` antes de iniciar a API atualizada.
+
+## Motor de automações
+
+A migração 003 acrescenta definições e runtime de regras, execuções auditadas, comandos genéricos e indicação de horário de medição conhecido. Reinicie API e worker depois de aplicá-la. O motor roda no worker e mantém `health.automations` atualizado; uma interface aberta não é necessária. Não execute um segundo agendador externo para as mesmas regras. Locks de linha e ocorrências únicas protegem a avaliação contra dois workers concorrentes, mas a instalação de referência continua com uma única instância.
+
+Regras e auditoria são incluídas no backup do banco. Após restauração, revise regras habilitadas antes de retomar o worker: suas configurações e estado são recuperados junto com os demais dados. Execuções ou comandos interrompidos não são retomados automaticamente. Consulte `AUTOMATIONS.md` para regras de duração, agenda, rearme, resultados desconhecidos e configuração de um dispositivo combinado.

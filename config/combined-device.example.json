@@ -1,0 +1,26 @@
+[
+  {
+    "id": "PREENCHER_DEVICE_ID_COMBINADO",
+    "name": "Sensor e infravermelho do ambiente",
+    "api_family": "iot-03",
+    "expected_interval": 300,
+    "properties": {
+      "SUBSTITUIR_CODIGO_TEMPERATURA": {"property":"temperature","scale":1,"unit":"°C","type":"number"},
+      "SUBSTITUIR_CODIGO_UMIDADE": {"property":"humidity","scale":0,"unit":"%","type":"number"}
+    },
+    "command": {
+      "kind": "ir",
+      "profile": "tuya_ac_v2",
+      "infrared_id": "PREENCHER_DEVICE_ID_COMBINADO",
+      "remote_id": "PREENCHER_CONTROLE_VIRTUAL_ID",
+      "validated": false,
+      "ac": {
+        "validated": false,
+        "status_validated": false,
+        "temperature": {"min":16,"max":30},
+        "modes": [],
+        "fan_speeds": []
+      }
+    }
+  }
+]
