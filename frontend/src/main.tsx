@@ -242,7 +242,7 @@ function App(){
       {imageFailed&&<div className="image-notice">A imagem não carregou. Você pode escolher outro cenário ou uma foto sua.</div>}
       {page!=='diagnostics'&&<main className={'spatial-window '+(page==='history'?'history-view':'')}>
         {page==='overview'&&<section className="glass-well thermostat-panel">
-          <div className="panel-header-tag"><span>Clima interno</span><span className="room-badge">{device?.virtual?'Sensor virtual':'Sensor principal'}</span></div>
+          <div className="panel-header-tag"><span>Clima interno</span><div className="panel-sensor-select"><GlassSelect label="Sensor" value={selected} onChange={setSelected} options={sensors.map(d=>({value:d.id,label:d.name}))}/></div></div>
           <Dial temperature={temperature?Number(temperature.value):undefined}/>
           <h2 className="sensor-name">{device?.name||'Aguardando sensor'}</h2>
           <div className="reading-origin"><Cloud size={13}/>{device?.virtual?'Valores simulados na Tuya Cloud':'Valores recebidos da Tuya Cloud'}</div>
@@ -252,7 +252,7 @@ function App(){
         <div className="right-column">
           {page==='overview'&&<div className="top-spectrum-grid"><TemperatureRangeCard deviceId={device?.id} updatedAt={temperature?.observed}/><HumidityCard reading={humidity}/></div>}
           <section className="glass-well chart-well">
-            <div className="chart-controls"><div className="sensor-select"><GlassSelect label="Sensor" value={selected} onChange={setSelected} options={sensors.map(d=>({value:d.id,label:d.name}))}/></div>
+            <div className="chart-controls">
               <div className="chart-options"><div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div>
               <div className="period-selector" aria-label="Período do histórico">{[1,7,30].map(p=><button key={p} aria-pressed={period===p} className={period===p?'active':''} onClick={()=>setPeriod(p)}>{p===1?'24h':p+'d'}</button>)}</div></div></div>
             {chartError?<div className="chart-empty" role="alert">{chartError}</div>:!hasPoints?<div className="chart-empty">{historyLoading?'Carregando histórico…':'As medições aparecerão aqui assim que forem recebidas.'}</div>:

@@ -84,3 +84,7 @@ O card superior direito voltou a mostrar a umidade do sensor. O terceiro campo a
 ### Gráfico com controles agrupados
 
 Removidos “AO LONGO DO TEMPO” e “O ritmo do seu ambiente.”. O período 24h/7d/30d fica ao lado de Tudo/Temp./Umid., no mesmo grupo horizontal; a seleção de sensor pode ocupar uma linha separada em telas estreitas. Conferidos ausência dos títulos, alinhamento dos dois grupos, troca para 7d e filtro de umidade na prévia; compilação TypeScript/Vite concluída. Evidência: chart-controls-preview.jpg.
+
+### Seleção de sensor no card principal
+
+O seletor de sensor foi movido do gráfico para o topo do card do mostrador, substituindo o selo Sensor virtual. Usa botão compacto de 110 × aproximadamente 26 px, com lista suspensa mostrando os nomes completos. A seleção continua compartilhada por leitura atual, umidade, extremos e histórico. Na prévia, conferidos abertura da lista e seleção, um seletor no card e nenhum no gráfico, sem transbordamento horizontal. TypeScript/Vite compilou com sucesso. Evidência: sensor-card-selector.jpg.
