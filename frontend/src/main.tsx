@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, Droplets, History, ImagePlus, LayoutDashboard, LogOut, Menu, Power, Radio, RefreshCw, ShieldCheck, Thermometer, Upload, X, Zap} from 'lucide-react';
+import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, Droplets, History, ImagePlus, LayoutDashboard, LogOut, Menu, Radio, RefreshCw, ShieldCheck, Thermometer, Upload, X} from 'lucide-react';
 import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid} from 'recharts';
 import {scenes, useBackground} from './backgrounds';
 import './style.css';
@@ -12,8 +12,7 @@ import {WorkflowPanel} from './WorkflowPanel';
 import './features.css';
 
 type Reading = {property:string; value:number|boolean|string; unit:string; observed:number; source:string; stale:boolean; observation_time_known?:boolean};
-type Device = {id:string; name:string; capabilities:string[]; controllable:boolean; kind:string; connectivity:string; states:Reading[]; last_command?:Command|null; virtual?:boolean; cloud_snapshot_without_timestamp?:boolean};
-type Command = {id:string; status:string; power:boolean|null; created:number};
+type Device = {id:string; name:string; capabilities:string[]; controllable:boolean; kind:string; connectivity:string; states:Reading[]; virtual?:boolean; cloud_snapshot_without_timestamp?:boolean};
 type Point = {time:number; value:number|null; min?:number|null; max?:number|null};
 type ChartPoint = {time:number; temperature:number|null; humidity:number|null};
 type Diagnostics = {tuya_connected:boolean; pending:number; dead:number; commands_unknown:number; oldest_pending:number|null; http_calls_window:number; health:Record<string, Record<string, unknown>>};
@@ -145,7 +144,7 @@ function App(){
   const [devices,setDevices]=useState<Device[]>([]), [page,setPage]=useState('overview'), [connected,setConnected]=useState(false);
   const [period,setPeriod]=useState(1), [selected,setSelected]=useState(''), [mode,setMode]=useState('both');
   const [points,setPoints]=useState<ChartPoint[]>([]), [historyLoading,setHistoryLoading]=useState(false), [chartError,setChartError]=useState('');
-  const [diagnostics,setDiagnostics]=useState<Diagnostics|null>(null), [commands,setCommands]=useState<Record<string,Command>>({}), [busy,setBusy]=useState<Record<string,boolean>>({});
+  const [diagnostics,setDiagnostics]=useState<Diagnostics|null>(null);
   const [syncing,setSyncing]=useState(false), [imageFailed,setImageFailed]=useState(false);
   const generation=useRef(0);
   useEffect(()=>setImageFailed(false),[background.url]);
@@ -173,7 +172,6 @@ function App(){
     void tick();const timer=setInterval(tick,15000);return()=>clearInterval(timer);
   },[logged]);
   const sensors=devices.filter(d=>d.capabilities.includes('temperature')||d.capabilities.includes('humidity'));
-  const controlled=devices.filter(d=>d.controllable||d.kind==='device');
   useEffect(()=>{if(!selected&&sensors.length)setSelected(sensors[0].id)},[devices,selected]);
   const loadHistory=useCallback(async()=>{
     if(!selected||!logged)return;
@@ -193,13 +191,6 @@ function App(){
     finally{if(generation.current===id)setHistoryLoading(false)}
   },[selected,period,logged]);
   useEffect(()=>{void loadHistory();const timer=setInterval(()=>void loadHistory(),60000);return()=>{clearInterval(timer);generation.current++}},[loadHistory]);
-  async function send(device:Device,power:boolean){
-    setBusy(b=>({...b,[device.id]:true}));setError('');
-    try{
-      const result=await api<Command>('/devices/'+encodeURIComponent(device.id)+'/commands',{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({power})});
-      setCommands(c=>({...c,[device.id]:result}));await refresh();
-    }catch(e){setError((e as Error).message)}finally{setBusy(b=>({...b,[device.id]:false}))}
-  }
   async function synchronize(){
     setSyncing(true);setError('');
     try{setDevices(await api<Device[]>('/devices/sync',{method:'POST'}));await loadHistory()}
@@ -248,15 +239,6 @@ function App(){
           </section>
         </div>
       </main>}
-      {page==='overview'&&controlled.length>0&&<section className="appliances">{controlled.map(d=>{
-        const power=d.states.find(s=>s.property==='power'), command=commands[d.id]||d.last_command;
-        return <article key={d.id} className="glass-well appliance"><div className="appliance-heading"><Zap size={20}/><span>{d.connectivity}</span></div><h2>{d.name}</h2>
-          <p>{power?(power.value?'Ligado':'Desligado')+' · '+power.source:'Estado desconhecido'}</p>
-          <div className="command-buttons"><button disabled={!d.controllable||busy[d.id]} onClick={()=>void send(d,true)}><Power size={14}/>Ligar</button><button disabled={!d.controllable||busy[d.id]} onClick={()=>void send(d,false)}><Power size={14}/>Desligar</button></div>
-          <p role="status">{busy[d.id]?'Enviando…':command?'Último comando: '+command.status:d.controllable?'Pronto para comandos':'Controle ainda não validado'}</p>
-          {d.kind==='ir'&&<small>O infravermelho não confirma o estado físico.</small>}
-        </article>;
-      })}</section>}
       {page==='automations'&&<WorkflowPanel api={api} devices={devices}/>}
       {page==='control'&&<ControlPanel api={api} onRefresh={refresh}/>}
       {page==='diagnostics'&&<main className="spatial-window diagnostic-window"><section className="glass-well diagnostic">
