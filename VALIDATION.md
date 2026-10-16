@@ -80,3 +80,7 @@ Validação: TypeScript/Vite compilou com sucesso; conferidas seleção de 6h e 
 ### Card de umidade e campo Externo
 
 O card superior direito voltou a mostrar a umidade do sensor. O terceiro campo abaixo do mostrador passou de Origem para Externo, com a temperatura meteorológica, consulta a cada dez minutos, indicação de dado antigo e valor ausente sem substituição inventada. A fonte Open-Meteo permanece acessível pelo link no valor e pela descrição acessível. Validado na prévia isolada: umidade de teste de 30%, temperatura externa consultada no provedor de 21,5 °C no momento da conferência, rótulo Externo e ausência do antigo campo Origem. TypeScript/Vite compilou com sucesso. Evidência: humidity-external-preview.jpg.
+
+### Gráfico com controles agrupados
+
+Removidos “AO LONGO DO TEMPO” e “O ritmo do seu ambiente.”. O período 24h/7d/30d fica ao lado de Tudo/Temp./Umid., no mesmo grupo horizontal; a seleção de sensor pode ocupar uma linha separada em telas estreitas. Conferidos ausência dos títulos, alinhamento dos dois grupos, troca para 7d e filtro de umidade na prévia; compilação TypeScript/Vite concluída. Evidência: chart-controls-preview.jpg.

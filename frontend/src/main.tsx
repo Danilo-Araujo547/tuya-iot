@@ -252,10 +252,9 @@ function App(){
         <div className="right-column">
           {page==='overview'&&<div className="top-spectrum-grid"><TemperatureRangeCard deviceId={device?.id} updatedAt={temperature?.observed}/><HumidityCard reading={humidity}/></div>}
           <section className="glass-well chart-well">
-            <div className="chart-heading"><div><p className="eyebrow">AO LONGO DO TEMPO</p><h2>O ritmo do seu ambiente.</h2></div>
-              <div className="period-selector" aria-label="Período do histórico">{[1,7,30].map(p=><button key={p} aria-pressed={period===p} className={period===p?'active':''} onClick={()=>setPeriod(p)}>{p===1?'24h':p+'d'}</button>)}</div></div>
             <div className="chart-controls"><div className="sensor-select"><GlassSelect label="Sensor" value={selected} onChange={setSelected} options={sensors.map(d=>({value:d.id,label:d.name}))}/></div>
-              <div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div></div>
+              <div className="chart-options"><div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div>
+              <div className="period-selector" aria-label="Período do histórico">{[1,7,30].map(p=><button key={p} aria-pressed={period===p} className={period===p?'active':''} onClick={()=>setPeriod(p)}>{p===1?'24h':p+'d'}</button>)}</div></div></div>
             {chartError?<div className="chart-empty" role="alert">{chartError}</div>:!hasPoints?<div className="chart-empty">{historyLoading?'Carregando histórico…':'As medições aparecerão aqui assim que forem recebidas.'}</div>:
               <div className="chart-canvas"><ResponsiveContainer width="100%" height={208}><LineChart data={points} margin={{top:14,right:0,bottom:0,left:-18}}>
                 <CartesianGrid stroke="rgba(255,255,255,.09)" vertical={false}/><XAxis dataKey="time" tickFormatter={t=>clock(Number(t))} minTickGap={50} tick={{fontSize:10,fill:'rgba(255,255,255,.55)'}} axisLine={false} tickLine={false}/>
