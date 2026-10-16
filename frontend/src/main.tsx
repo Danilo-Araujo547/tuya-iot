@@ -266,7 +266,7 @@ function App(){
           ['Última ingestão',diagnostics.health.last_ingest?.at?time(Number(diagnostics.health.last_ingest.at)):'Aguardando']
         ].map(([label,value])=><div key={String(label)}><span>{label}</span><strong>{value}</strong></div>)}</div><details><summary>Detalhes dos serviços</summary><pre>{JSON.stringify(diagnostics.health,null,2)}</pre></details></>:<p>Carregando diagnóstico…</p>}
       </section></main>}
-      <footer className="spatial-footer"><span><ShieldCheck size={12}/>Integração privada com a Tuya</span><span>{latest?'Consulta à nuvem · '+time(latest):'Aguardando dados'} · São Paulo</span></footer>
+      <footer className="spatial-footer"><span>{latest?'Consulta à nuvem · '+time(latest):'Aguardando dados'} · São Paulo</span></footer>
       <div className="vision-grabber" aria-hidden="true"/>
     </div>}
   </div>;
