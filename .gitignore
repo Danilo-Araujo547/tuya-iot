@@ -1,0 +1,12 @@
+.env
+secrets/*
+!secrets/.gitkeep
+config/devices.json
+node_modules/
+dist/
+__pycache__/
+.pytest_cache/
+*.db
+*.pyc
+backups/
+reports/

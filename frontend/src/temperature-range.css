@@ -1,0 +1,33 @@
+.temperature-range{display:flex;flex-direction:column;justify-content:space-between;min-height:167px;padding:21px 20px;gap:15px}
+.range-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.range-heading h2{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:#ffffffb3}
+.range-period{display:flex;align-items:center;gap:4px;padding:5px 7px;background:#ffffff14;border:1px solid #ffffff20;border-radius:99px}
+.range-period select{appearance:none;background:none;color:white;border:0;font-size:10px;cursor:pointer}
+.range-period option{background:#303a40;color:white}
+.range-values{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.range-values>div{display:flex;flex-direction:column;gap:7px}
+.range-values>div+div{border-left:1px solid #ffffff20;padding-left:12px}
+.range-values span{font-size:10px;color:#afdbe9}
+.range-values>div+div span{color:#f1c791}
+.range-values strong{font-size:28px;line-height:1.15;font-weight:300;letter-spacing:-1px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.range-values small{font-size:11px;margin-left:3px;letter-spacing:0;color:#ffffffad}
+.range-note{font-size:8px;color:#ffffff80;line-height:1.4}
+.view-nav .sensor-status{margin:0 12px 0 0;font-size:9px}
+.view-nav .sensor-status i{flex-shrink:0}
+@media(max-width:880px){
+  .temperature-range{padding:17px 14px}.range-heading h2{font-size:10px}.range-heading h2 svg{display:none}
+  .range-values strong{font-size:23px}.range-values{gap:8px}.range-values>div+div{padding-left:8px}
+  .view-nav .sensor-status span{display:none}.view-nav .sensor-status{padding:7px;margin-right:5px}
+}
+@media(max-width:700px){
+  .temperature-range{min-height:157px;padding:17px 12px}.range-heading h2{font-size:9px}
+  .range-period{padding:4px 5px;gap:2px}.range-period select{font-size:9px}
+  .range-values{gap:6px}.range-values>div+div{padding-left:6px}.range-values strong{font-size:22px}
+  .range-values small{font-size:9px;margin-left:2px}.range-values span{font-size:9px}.range-note{font-size:7px}
+  .view-nav .sensor-status{padding:4px;margin-right:2px}.view-nav>button{padding-left:8px;padding-right:8px}
+}
+/* Shared menus keep period and sensor choices consistent with the glass panels. */
+.glass-select{position:relative;min-width:0}.glass-select-trigger{display:flex;align-items:center;justify-content:space-between;gap:9px;max-width:100%;border:1px solid #ffffff30;border-radius:12px;padding:7px 10px;background:linear-gradient(140deg,#ffffff24,#ffffff0b);box-shadow:inset 0 1px 0 #ffffff24;color:#ffffffdf;font-size:10px;cursor:pointer}.glass-select-trigger>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.glass-select-trigger>svg{flex-shrink:0;opacity:.7;transition:transform .2s}.glass-select-trigger[aria-expanded=true]>svg{transform:rotate(180deg)}.glass-select-trigger:hover{background:#ffffff25}.glass-select-trigger:focus-visible,.glass-select-menu button:focus-visible{outline:2px solid #e7f0ef;outline-offset:3px}.glass-select-menu{position:absolute;z-index:30;top:calc(100% + 7px);right:0;min-width:112px;max-height:240px;overflow:auto;padding:5px;border:1px solid #ffffff3b;border-radius:15px;background:linear-gradient(145deg,#485154f5,#232f34fa);box-shadow:0 15px 32px #0005,inset 0 1px 0 #ffffff25;backdrop-filter:blur(30px)}.glass-select-menu button{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;border:0;background:transparent;color:#ffffffb3;font-size:11px;text-align:left;padding:10px;border-radius:10px;white-space:nowrap}.glass-select-menu button:hover,.glass-select-menu button:focus{background:#ffffff14;color:white}.glass-select-menu button[aria-selected=true]{background:#ffffff20;color:white}.temperature-range:focus-within{z-index:5}.sensor-select{max-width:55%}.sensor-select .glass-select{width:100%}.sensor-select .glass-select-trigger{width:100%;font-size:9px;padding:6px 9px}.sensor-select .glass-select-menu{left:0;right:auto;max-width:280px;min-width:100%}.sensor-select .glass-select-menu button{white-space:normal;overflow-wrap:anywhere}.chart-well:focus-within{z-index:5}
+.outdoor-card{display:flex;flex-direction:column;justify-content:space-between;min-height:167px;padding:21px 20px;gap:12px}.outdoor-heading{display:flex;align-items:center;gap:9px}.outdoor-icon{display:flex;align-items:center;justify-content:center;width:30px;height:30px;flex-shrink:0;color:#f6d69d;background:#f1c7911a;border:1px solid #f1c79126;border-radius:10px}.outdoor-heading h2{font-size:11px;line-height:1.5;font-weight:500;color:#ffffffbf}.outdoor-reading{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.outdoor-reading strong{font-size:35px;line-height:1.15;font-weight:300;letter-spacing:-1.4px;font-variant-numeric:tabular-nums;white-space:nowrap}.outdoor-reading strong small{font-size:13px;font-weight:400;letter-spacing:0;margin-left:4px;color:#ffffffad}.outdoor-reading>span{font-size:8px;color:#ffffffa3;text-align:right;line-height:1.5}.outdoor-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;font-size:8px;line-height:1.5;color:#ffffff80}.outdoor-footer a{color:#ffffffad;text-decoration:none}.outdoor-footer a:hover{text-decoration:underline}.period-selector button,.chart-filters button,.scene-nav button{transition:background .2s,box-shadow .2s}.period-selector button.active,.chart-filters button.active{background:linear-gradient(135deg,#ffffff38,#ffffff17);box-shadow:inset 0 1px 0 #ffffff40,0 2px 5px #0002}.period-selector,.chart-filters{border-color:#ffffff25;background:#0a121b26;padding:4px}.period-selector button{padding:6px 10px}
+@media(max-width:880px){.outdoor-card{padding:17px 14px}.outdoor-heading h2{font-size:10px}.outdoor-reading strong{font-size:30px}.outdoor-reading{flex-wrap:wrap;gap:4px}.glass-select-trigger{font-size:9px;padding:6px 8px;gap:5px}}
+@media(max-width:700px){.outdoor-card{padding:17px 12px;min-height:157px}.outdoor-heading{gap:6px}.outdoor-heading h2{font-size:9px}.outdoor-icon{width:25px;height:25px;border-radius:8px}.outdoor-icon svg{width:17px}.outdoor-reading strong{font-size:29px}.outdoor-reading>span{font-size:7px}.outdoor-footer{font-size:7px}.range-heading{align-items:center}.range-heading .glass-select-trigger{padding:6px;gap:3px;font-size:9px}.range-heading h2{font-size:9px}.glass-select-menu button{padding:10px;font-size:11px}.period-selector button{padding:5px 7px}}

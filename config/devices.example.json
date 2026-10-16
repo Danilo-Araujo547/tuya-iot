@@ -1,0 +1,25 @@
+[
+  {
+    "id": "SUBSTITUIR_SENSOR_ID",
+    "name": "Sensor da sala",
+    "expected_interval": 300,
+    "gateway_id": "PREENCHER_SE_ZIGBEE",
+    "properties": {
+      "temp_current": {"property": "temperature", "scale": 1, "unit": "°C", "type": "number"},
+      "humidity_value": {"property": "humidity", "scale": 0, "unit": "%", "type": "number"}
+    }
+  },
+  {
+    "id": "SUBSTITUIR_CONTROLE_VIRTUAL_ID",
+    "name": "Ar-condicionado da sala",
+    "expected_interval": 300,
+    "properties": {},
+    "command": {
+      "kind": "ir",
+      "validated": false,
+      "path": "/v2.0/infrareds/SUBSTITUIR_HUB_ID/remotes/SUBSTITUIR_REMOTE_ID/command",
+      "on": {"category_id": 5, "key": "PowerOn"},
+      "off": {"category_id": 5, "key": "PowerOff"}
+    }
+  }
+]

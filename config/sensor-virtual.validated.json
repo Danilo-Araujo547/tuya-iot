@@ -1,0 +1,14 @@
+[
+  {
+    "id": "vdevo179208885319728",
+    "name": "Sensor virtual Tuya",
+    "virtual": true,
+    "api_family": "iot-03",
+    "cloud_snapshot_without_timestamp": true,
+    "expected_interval": 300,
+    "properties": {
+      "va_temperature": {"property": "temperature", "scale": 1, "unit": "°C", "type": "number"},
+      "va_humidity": {"property": "humidity", "scale": 0, "unit": "%", "type": "number"}
+    }
+  }
+]

@@ -1,0 +1,101 @@
+name: tuya-iot
+x-app: &app
+  image: tuya-iot-api:local
+  build: ./backend
+  restart: unless-stopped
+  init: true
+  environment: &environment
+    DATABASE_URL_FILE: /run/secrets/database_url
+    ADMIN_PASSWORD_HASH_FILE: /run/secrets/admin_password_hash
+    TUYA_ACCESS_ID_FILE: /run/secrets/tuya_access_id
+    TUYA_ACCESS_SECRET_FILE: /run/secrets/tuya_access_secret
+    APP_ORIGIN: https://${APP_HOST:-localhost}
+    TUYA_ENDPOINT: ${TUYA_ENDPOINT:-https://openapi.tuyaus.com}
+    TUYA_PULSAR_ENDPOINT: ${TUYA_PULSAR_ENDPOINT:-wss://mqe.tuyaus.com:8285/}
+    TUYA_CALLS_PER_MINUTE: ${TUYA_CALLS_PER_MINUTE:-30}
+    TUYA_RECONCILE_SECONDS: ${TUYA_RECONCILE_SECONDS:-3600}
+    DEVICE_CONFIG: /config/devices.json
+  secrets: [database_url, admin_password_hash, tuya_access_id, tuya_access_secret]
+  volumes: [./config:/config:ro]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  read_only: true
+  tmpfs: [/tmp]
+
+services:
+  db:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tuya
+      POSTGRES_DB: tuya
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U tuya -d tuya"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  migrate:
+    <<: *app
+    restart: 'no'
+    command: [python, -m, app.cli, migrate]
+    depends_on:
+      db: {condition: service_healthy}
+  api:
+    <<: *app
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/healthz')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  worker:
+    <<: *app
+    command: [python, -m, app.worker]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, python, -c, "import time; from app.db import DB,Health; s=DB(); h=s.get(Health,'worker'); assert h and time.time()-h.updated<180"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      APP_HOST: ${APP_HOST:-localhost}
+    ports:
+      - '${BIND_ADDRESS:-127.0.0.1}:443:443'
+    volumes: [caddy_data:/data, caddy_config:/config]
+    depends_on:
+      api: {condition: service_healthy}
+  backup:
+    build: ./ops/backup
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: tuya
+      PGDATABASE: tuya
+      RESTIC_REPOSITORY: /repository/tuya
+      RESTIC_PASSWORD_FILE: /run/secrets/restic_password
+    secrets: [postgres_password, restic_password]
+    volumes:
+      - '${BACKUP_PATH:-./backups}:/repository'
+    tmpfs: [/tmp]
+    depends_on:
+      db: {condition: service_healthy}
+
+secrets:
+  postgres_password: {file: ./secrets/postgres_password}
+  database_url: {file: ./secrets/database_url}
+  admin_password_hash: {file: ./secrets/admin_password_hash}
+  tuya_access_id: {file: ./secrets/tuya_access_id}
+  tuya_access_secret: {file: ./secrets/tuya_access_secret}
+  restic_password: {file: ./secrets/restic_password}
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
