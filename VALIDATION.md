@@ -124,3 +124,9 @@ O seletor de sensor foi movido do gráfico para o topo do card do mostrador, sub
 ### Integração das branches — 16/10/2026
 
 Integrados os refinamentos visuais de `codex/menu-e-papeis-de-parede` à main, preservando o cadastro combinado, automações e controles IR/TV existentes. Resolvidos os conflitos dos imports e do seletor compartilhado em main.tsx, mantendo GlassSelect.tsx como componente comum; os históricos de validação de ambas as branches foram preservados. Validação após integração: compilação TypeScript/Vite concluída e suíte backend com 72 testes aprovados, 3 verificações específicas de PostgreSQL ignoradas. Nenhum comando foi transmitido aos dispositivos para validar o merge.
+
+### Controle IR com opções recolhidas
+
+Na tela de IR, removidos o cabeçalho externo e a lista permanente de dispositivos. O painel central mantém seleção do controle e comandos; uma engrenagem discreta abre cadastro, aparelhos cadastrados, edição, consultas à Tuya e histórico. Resultados e erros das consultas aparecem no diálogo de configuração quando ele está aberto. A tela sem aparelhos mantém caminho para cadastro.
+
+Validação: compilação TypeScript/Vite concluída; prévia isolada com controle de TV fictício, sem conexão de comandos, conferindo apenas um painel central, ausência do cabeçalho/lista externa, abertura de configurações, acesso à edição e cancelamento, e visualização em 390px. Nenhum comando IR ou atualização de cadastro foi enviado. Evidências: ir-clean-control.jpg e ir-clean-settings-mobile.jpg.
