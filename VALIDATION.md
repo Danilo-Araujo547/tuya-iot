@@ -102,3 +102,25 @@ Verificação visual em prévia isolada: cadastro de IR, comandos manuais com ad
 - Suíte padrão atualizada: **72 testes aprovados, 3 verificações de concorrência/migração específicas de PostgreSQL ignoradas**. Os **10 testes de controle e 16 testes de automações passaram em PostgreSQL**, incluindo descoberta de teclas, whitelist, troca de remote_id, não atribuição de energia e ação IR em regra.
 - Compilação TypeScript/Vite concluída. Prévia isolada com cópia da configuração e leituras reais conferida em 1440px e 390px: 21 teclas, teste físico identificado, ausência de controles de temperatura para TV e sem rolagem horizontal. A captura desktop inclui cópia do registro real de teste. Nenhum comando adicional foi transmitido ao conferir a interface.
 - Evidências: `tv-control-preview.jpg`, `tv-control-mobile.jpg`, configuração `config/data-center.validated.json` e relatório em `docs/CLOUD-VALIDATION.md`. As credenciais permanecem fora do pacote.
+
+### Visual sem gradientes e períodos lado a lado
+
+Na branch `codex/menu-e-papeis-de-parede`, o menu lateral, o botão de abrir menu e os seletores usam fundos planos. O card de extremos passou a mostrar 1h, 6h, 24h, 7d e 30d como botões visíveis na mesma linha; histórico e filtros usam o mesmo estilo de seleção. Mantida a navegação por teclado e a indicação acessível da opção selecionada.
+
+Validação: TypeScript/Vite compilou com sucesso; conferidas seleção de 6h e 30d, abertura/fechamento do menu e dimensões de 1440px e 390px em prévia isolada com dados de layout. As cinco opções permaneceram alinhadas, sem rolagem horizontal no celular. Estilos computados confirmaram `background-image: none` no menu e na opção selecionada. Nenhum erro JavaScript registrado. A prévia não acessa banco operacional, credenciais ou comandos Tuya; o clima externo fica indisponível nessa prévia. Evidências: clean-selectors-desktop.jpg, clean-selectors-mobile.jpg e clean-navigation.jpg.
+
+### Card de umidade e campo Externo
+
+O card superior direito voltou a mostrar a umidade do sensor. O terceiro campo abaixo do mostrador passou de Origem para Externo, com a temperatura meteorológica, consulta a cada dez minutos, indicação de dado antigo e valor ausente sem substituição inventada. A fonte Open-Meteo permanece acessível pelo link no valor e pela descrição acessível. Validado na prévia isolada: umidade de teste de 30%, temperatura externa consultada no provedor de 21,5 °C no momento da conferência, rótulo Externo e ausência do antigo campo Origem. TypeScript/Vite compilou com sucesso. Evidência: humidity-external-preview.jpg.
+
+### Gráfico com controles agrupados
+
+Removidos “AO LONGO DO TEMPO” e “O ritmo do seu ambiente.”. O período 24h/7d/30d fica ao lado de Tudo/Temp./Umid., no mesmo grupo horizontal; a seleção de sensor pode ocupar uma linha separada em telas estreitas. Conferidos ausência dos títulos, alinhamento dos dois grupos, troca para 7d e filtro de umidade na prévia; compilação TypeScript/Vite concluída. Evidência: chart-controls-preview.jpg.
+
+### Seleção de sensor no card principal
+
+O seletor de sensor foi movido do gráfico para o topo do card do mostrador, substituindo o selo Sensor virtual. Usa botão compacto de 110 × aproximadamente 26 px, com lista suspensa mostrando os nomes completos. A seleção continua compartilhada por leitura atual, umidade, extremos e histórico. Na prévia, conferidos abertura da lista e seleção, um seletor no card e nenhum no gráfico, sem transbordamento horizontal. TypeScript/Vite compilou com sucesso. Evidência: sensor-card-selector.jpg.
+
+### Integração das branches — 16/10/2026
+
+Integrados os refinamentos visuais de `codex/menu-e-papeis-de-parede` à main, preservando o cadastro combinado, automações e controles IR/TV existentes. Resolvidos os conflitos dos imports e do seletor compartilhado em main.tsx, mantendo GlassSelect.tsx como componente comum; os históricos de validação de ambas as branches foram preservados. Validação após integração: compilação TypeScript/Vite concluída e suíte backend com 72 testes aprovados, 3 verificações específicas de PostgreSQL ignoradas. Nenhum comando foi transmitido aos dispositivos para validar o merge.

@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, History, ImagePlus, LayoutDashboard, LogOut, Menu, Moon, Power, Radio, RefreshCw, ShieldCheck, Sun, Thermometer, Upload, X, Zap} from 'lucide-react';
+import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, Droplets, History, ImagePlus, LayoutDashboard, LogOut, Menu, Power, Radio, RefreshCw, ShieldCheck, Thermometer, Upload, X, Zap} from 'lucide-react';
 import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid} from 'recharts';
 import {scenes, useBackground} from './backgrounds';
 import './style.css';
@@ -50,7 +50,7 @@ function Dial({temperature}:{temperature:number|undefined}) {
 
 type Weather = {temperature:number;observed:number;stale:boolean;is_day:boolean;weather_code:number|null;source:string};
 
-function OutdoorCard(){
+function ExternalStat(){
   const [weather,setWeather]=useState<Weather|null>(null),[error,setError]=useState(false);
   useEffect(()=>{
     let active=true;
@@ -59,11 +59,18 @@ function OutdoorCard(){
   },[]);
   const outdated=error||weather?.stale||!!weather&&Date.now()/1000-weather.observed>7200;
   const available=weather&&Date.now()/1000-weather.observed<=7200;
-  const Icon=weather?.weather_code!==null&&weather?.weather_code!==undefined&&weather.weather_code>2?Cloud:weather?.is_day?Sun:Moon;
-  return <section className="glass-well outdoor-card" aria-label="Temperatura externa">
-    <div className="outdoor-heading"><span className="outdoor-icon"><Icon size={21}/></span><h2>Temperatura externa</h2></div>
-    <div className="outdoor-reading" aria-live="polite"><strong>{number(available?weather.temperature:undefined)}<small>°C</small></strong><span>{!weather?(error?'Indisponível':'Consultando…'):outdated?'Atualização pendente':'Ao ar livre'}</span></div>
-    <div className="outdoor-footer"><span>Estimativa meteorológica{available?' · '+clock(weather.observed):''}</span><a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a></div>
+  const status=!weather?(error?'Indisponível':'Consultando…'):outdated?'Atualização pendente':'Estimativa meteorológica';
+  return <div className="external-stat" title={status+(available?' · '+clock(weather.observed):'')}>
+    <span>Externo</span><strong aria-live="polite"><a href="https://open-meteo.com/" target="_blank" rel="noreferrer" aria-label={'Externo: '+number(available?weather.temperature:undefined)+' graus Celsius. '+status+'. Fonte: Open-Meteo.'}>{number(available?weather.temperature:undefined)}<small>°C</small>{available&&outdated&&<i className="weather-stale" aria-label="Dado antigo"/>}</a></strong>
+  </div>;
+}
+
+function HumidityCard({reading}:{reading:Reading|undefined}){
+  const value=reading?Number(reading.value):undefined;
+  return <section className="glass-well humidity-card" aria-label="Umidade">
+    <div className="humidity-heading"><span className="humidity-icon"><Droplets size={21}/></span><h2>Umidade</h2></div>
+    <div className="humidity-reading" aria-live="polite"><strong>{number(value)}<small>%</small></strong><span>{!reading?'Aguardando':reading.stale?'Dado antigo':'Na nuvem'}</span></div>
+    <div className="humidity-footer"><span>{reading?'Última consulta · '+clock(reading.observed):'Aguardando medição do sensor'}</span></div>
   </section>;
 }
 
@@ -90,7 +97,8 @@ function TemperatureRangeCard({deviceId,updatedAt}:{deviceId:string|undefined;up
     return()=>{active=false;controller.abort();clearInterval(timer)};
   },[deviceId,hours,updatedAt]);
   return <section className="glass-well temperature-range" aria-label="Extremos de temperatura">
-    <div className="range-heading"><h2><Thermometer size={16}/>Temperatura</h2><GlassSelect label="Período da mínima e máxima" value={String(hours)} onChange={value=>setHours(Number(value))} options={[{value:'1',label:'1h'},{value:'6',label:'6h'},{value:'24',label:'24h'},{value:'168',label:'7 dias'},{value:'720',label:'30 dias'}]}/></div>
+    <div className="range-heading"><h2><Thermometer size={16}/>Temperatura</h2></div>
+    <div className="range-options" role="group" aria-label="Período da mínima e máxima">{[[1,'1h'],[6,'6h'],[24,'24h'],[168,'7d'],[720,'30d']].map(([value,label])=><button type="button" key={value} aria-pressed={hours===value} onClick={()=>setHours(Number(value))}>{label}</button>)}</div>
     <div className="range-values" aria-live="polite" aria-busy={loading}><div><span>Mínima</span><strong>{number(range.min)}<small>°C</small></strong></div><div><span>Máxima</span><strong>{number(range.max)}<small>°C</small></strong></div></div>
     <p className="range-note" role={error?'alert':'status'}>{loading?'Carregando…':error?'Falha ao consultar histórico':range.min===undefined?'Sem medições no período':'Registradas no período'}</p>
   </section>;
@@ -213,20 +221,19 @@ function App(){
       {imageFailed&&<div className="image-notice">A imagem não carregou. Você pode escolher outro cenário ou uma foto sua.</div>}
       {(page==='overview'||page==='history')&&<main className={'spatial-window '+(page==='history'?'history-view':'')}>
         {page==='overview'&&<section className="glass-well thermostat-panel">
-          <div className="panel-header-tag"><span>Clima interno</span><span className="room-badge">{device?.virtual?'Sensor virtual':'Sensor principal'}</span></div>
+          <div className="panel-header-tag"><span>Clima interno</span><div className="panel-sensor-select"><GlassSelect label="Sensor" value={selected} onChange={setSelected} options={sensors.map(d=>({value:d.id,label:d.name}))}/></div></div>
           <Dial temperature={temperature?Number(temperature.value):undefined}/>
           <h2 className="sensor-name">{device?.name||'Aguardando sensor'}</h2>
           <div className="reading-origin"><Cloud size={13}/>{device?.virtual?'Valores simulados na Tuya Cloud':'Valores recebidos da Tuya Cloud'}</div>
-          <div className="mini-stats"><div><span>Umidade</span><strong>{number(humidity?Number(humidity.value):undefined)}<small>%</small></strong></div><div><span>Consulta</span><strong>{latest?clock(latest):'—'}</strong></div><div><span>Origem</span><strong>{device?.virtual?'Virtual':'Tuya'}</strong></div></div>
+          <div className="mini-stats"><div><span>Umidade</span><strong>{number(humidity?Number(humidity.value):undefined)}<small>%</small></strong></div><div><span>Consulta</span><strong>{latest?clock(latest):'—'}</strong></div><ExternalStat/></div>
           <p className="freshness">{temperature?.stale||humidity?.stale?'A última consulta está desatualizada.':device?.cloud_snapshot_without_timestamp?'A API não informa o horário da medição.':'Horário da última atualização disponível.'}</p>
         </section>}
         <div className="right-column">
-          {page==='overview'&&<div className="top-spectrum-grid"><TemperatureRangeCard deviceId={device?.id} updatedAt={temperature?.observed}/><OutdoorCard/></div>}
+          {page==='overview'&&<div className="top-spectrum-grid"><TemperatureRangeCard deviceId={device?.id} updatedAt={temperature?.observed}/><HumidityCard reading={humidity}/></div>}
           <section className="glass-well chart-well">
-            <div className="chart-heading"><div><p className="eyebrow">AO LONGO DO TEMPO</p><h2>O ritmo do seu ambiente.</h2></div>
-              <div className="period-selector" aria-label="Período do histórico">{[1,7,30].map(p=><button key={p} aria-pressed={period===p} className={period===p?'active':''} onClick={()=>setPeriod(p)}>{p===1?'24h':p+'d'}</button>)}</div></div>
-            <div className="chart-controls"><div className="sensor-select"><GlassSelect label="Sensor" value={selected} onChange={setSelected} options={sensors.map(d=>({value:d.id,label:d.name}))}/></div>
-              <div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div></div>
+            <div className="chart-controls">
+              <div className="chart-options"><div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div>
+              <div className="period-selector" aria-label="Período do histórico">{[1,7,30].map(p=><button key={p} aria-pressed={period===p} className={period===p?'active':''} onClick={()=>setPeriod(p)}>{p===1?'24h':p+'d'}</button>)}</div></div></div>
             {chartError?<div className="chart-empty" role="alert">{chartError}</div>:!hasPoints?<div className="chart-empty">{historyLoading?'Carregando histórico…':'As medições aparecerão aqui assim que forem recebidas.'}</div>:
               <div className="chart-canvas"><ResponsiveContainer width="100%" height={208}><LineChart data={points} margin={{top:14,right:0,bottom:0,left:-18}}>
                 <CartesianGrid stroke="rgba(255,255,255,.09)" vertical={false}/><XAxis dataKey="time" tickFormatter={t=>clock(Number(t))} minTickGap={50} tick={{fontSize:10,fill:'rgba(255,255,255,.55)'}} axisLine={false} tickLine={false}/>
