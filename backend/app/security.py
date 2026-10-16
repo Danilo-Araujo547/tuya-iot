@@ -11,7 +11,7 @@ def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def authenticate(request: Request, control=False):
+def authenticate(request: Request, control=False, automations=False):
     token = request.headers.get("authorization", "")
     with DB() as db:
         if token.startswith("Bearer "):
@@ -20,6 +20,8 @@ def authenticate(request: Request, control=False):
                 raise HTTPException(401, "Chave inválida")
             if control and not key.control:
                 raise HTTPException(403, "Sem permissão de controle")
+            if automations and not key.automations:
+                raise HTTPException(403, "Sem permissão para gerenciar automações")
             return "key:" + key.name
         session = db.get(Session, digest(request.cookies.get("session", "")))
         if not session or session.expires <= time.time():

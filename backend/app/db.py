@@ -132,6 +132,7 @@ class ApiKey(Base):
     hash: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True)
     control: Mapped[bool] = mapped_column(Boolean, default=False)
+    automations: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Health(Base):

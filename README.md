@@ -79,6 +79,10 @@ O PostgreSQL e a API não publicam portas no host. O proxy expõe somente HTTPS 
 
 O retorno positivo da Tuya significa aceitação pela nuvem. O estado fica **estimado** até um evento independente reportá-lo. Um controle IR convencional continua estimado mesmo quando a API oferece estado do controle virtual. Na ausência de dados, a interface mostra estado ou conectividade desconhecidos; após três intervalos sem medição, mostra dado desatualizado.
 
+## Integração pela API
+
+O [guia de integração](docs/INTEGRATION-API.md) documenta somente visualização e controle de dispositivos e automações, com exemplos PowerShell/curl. Gere tokens no terminal usando `python -m app.cli create-token --name integracao`: `--control` libera comandos manuais e `--automations` libera gerenciamento de automações. `list-tokens` lista permissões; `revoke-token --name integracao` revoga. O cliente usa Bearer e não recebe as credenciais administrativas ou da Tuya. A migração 005 preserva as permissões de tokens antigos.
+
 ## Desenvolvimento e testes
 
 ```sh

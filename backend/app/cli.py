@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from argon2 import PasswordHasher
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from . import config
 from .db import Base, DB, engine, Device, ApiKey, Rate, Event, Appearance
 from .security import digest
@@ -20,7 +21,7 @@ def migrate():
         with engine.begin() as conn:
             conn.execute(text("SELECT pg_advisory_xact_lock(42916701)"))
             conn.execute(text("CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY)"))
-            for version, filename in [('001', '001_initial.sql'), ('002', '002_appearance.sql'), ('003', '003_automations.sql'), ('004', '004_workflows.sql')]:
+            for version, filename in [('001', '001_initial.sql'), ('002', '002_appearance.sql'), ('003', '003_automations.sql'), ('004', '004_workflows.sql'), ('005', '005_api_token_scopes.sql')]:
                 if not conn.execute(text("SELECT 1 FROM schema_migrations WHERE version=:version"), {'version': version}).first():
                     sql = (Path(__file__).parent.parent / 'migrations' / filename).read_text()
                     for statement in sql.split(';'):
@@ -94,10 +95,12 @@ def main():
     subs.add_parser("hash-password")
     provision = subs.add_parser("provision")
     provision.add_argument("--file", default=config.CONFIG_PATH)
-    key = subs.add_parser("create-key")
+    key = subs.add_parser("create-token", aliases=["create-key"], help="Gera token Bearer; exibido uma vez")
     key.add_argument("--name", required=True)
     key.add_argument("--control", action="store_true")
-    revoke = subs.add_parser("revoke-key")
+    key.add_argument("--automations", action="store_true", help="Permite criar, editar, ativar e pausar automações")
+    subs.add_parser("list-tokens", aliases=["list-keys"], help="Lista nomes e permissões, sem revelar tokens")
+    revoke = subs.add_parser("revoke-token", aliases=["revoke-key"])
     revoke.add_argument("--name", required=True)
     retry = subs.add_parser("replay")
     retry.add_argument("--event", required=True)
@@ -118,12 +121,21 @@ def main():
         print(PasswordHasher().hash(password))
     elif args.action == "provision":
         print(json.dumps({"provisioned": load_devices(args.file)}))
-    elif args.action == "create-key":
+    elif args.action in ("create-token", "create-key"):
+        if not args.name.strip() or len(args.name) > 100:
+            parser.error("O nome deve conter de 1 a 100 caracteres")
         value = secrets.token_urlsafe(32)
-        with DB.begin() as db:
-            db.add(ApiKey(hash=digest(value), name=args.name, control=args.control))
+        try:
+            with DB.begin() as db:
+                db.add(ApiKey(hash=digest(value), name=args.name, control=args.control, automations=args.automations))
+        except IntegrityError:
+            parser.error("Já existe um token com esse nome; use outro nome ou revogue o anterior")
         print(value)  # Deliberately shown exactly once to the operator.
-    elif args.action == "revoke-key":
+    elif args.action in ("list-tokens", "list-keys"):
+        with DB() as db:
+            print(json.dumps([{"name": key.name, "read": True, "control": key.control,
+                               "automations": key.automations} for key in db.query(ApiKey).order_by(ApiKey.name)]))
+    elif args.action in ("revoke-token", "revoke-key"):
         with DB.begin() as db:
             db.query(ApiKey).filter_by(name=args.name).delete()
     elif args.action == "replay":

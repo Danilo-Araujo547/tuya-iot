@@ -58,6 +58,6 @@ def test_sql_migration_is_repeatable_and_preserves_data(database, monkeypatch):
     cli.migrate()
     with DB() as db:
         assert db.get(Device, "preserved").name == "Preserved"
-        assert db.execute(text("SELECT version FROM schema_migrations ORDER BY version")).scalars().all() == ['001', '002', '003']
+        assert db.execute(text("SELECT version FROM schema_migrations ORDER BY version")).scalars().all() == ['001', '002', '003', '004', '005']
         assert db.get(Appearance, 'dashboard').selected == 'studio'
         assert db.get(Wallpaper, 'preserved-wallpaper').image == b'persisted-bytes'

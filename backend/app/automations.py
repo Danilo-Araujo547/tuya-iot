@@ -52,7 +52,7 @@ class Switch(BaseModel):
 
 
 def admin(request):
-    if authenticate(request)!='admin':raise HTTPException(403,'Somente o administrador pode alterar automações')
+    authenticate(request, automations=True)
 
 
 def ready(db,definition):

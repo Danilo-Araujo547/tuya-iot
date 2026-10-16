@@ -25,7 +25,7 @@ GET /api/v1/automation-flow/runs — últimas 60 execuções, etapas, resultados
 
 Nós: {id, kind: trigger|delay|condition|action, label, position:{x,y}, data:{...}}.
 Arestas: {id, source, target, port:out|yes|no}. Condições exigem yes/no; demais blocos usam out.
-Mutações exigem administrador e CSRF. Chaves de integração só consultam. Migração 004_workflows.sql incluída. Backup PostgreSQL também preserva os fluxos e esperas. Auditoria mantida por 180 dias.
+Mutações aceitam sessão administrativa com CSRF ou token Bearer com permissão `--automations`. Tokens de leitura ou somente `--control` não alteram o fluxo. Migrações 004_workflows.sql e 005_api_token_scopes.sql incluídas. Backup PostgreSQL preserva fluxos, esperas e hashes dos tokens. Auditoria mantida por 180 dias. Exemplos em [INTEGRATION-API.md](INTEGRATION-API.md).
 
 O bloco Ação apresenta todos os botões IR habilitados diretamente numa grade. Cada botão seleciona o comando a salvar; não transmite ao clicar. Capacidades de energia, temperatura, modos e ventilação aparecem quando validadas. Cada nó envia um comando; encadeie nós para uma sequência.
 
