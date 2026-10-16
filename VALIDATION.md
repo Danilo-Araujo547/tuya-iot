@@ -130,3 +130,8 @@ Integrados os refinamentos visuais de `codex/menu-e-papeis-de-parede` à main, p
 Na tela de IR, removidos o cabeçalho externo e a lista permanente de dispositivos. O painel central mantém seleção do controle e comandos; uma engrenagem discreta abre cadastro, aparelhos cadastrados, edição, consultas à Tuya e histórico. Resultados e erros das consultas aparecem no diálogo de configuração quando ele está aberto. A tela sem aparelhos mantém caminho para cadastro.
 
 Validação: compilação TypeScript/Vite concluída; prévia isolada com controle de TV fictício, sem conexão de comandos, conferindo apenas um painel central, ausência do cabeçalho/lista externa, abertura de configurações, acesso à edição e cancelamento, e visualização em 390px. Nenhum comando IR ou atualização de cadastro foi enviado. Evidências: ir-clean-control.jpg e ir-clean-settings-mobile.jpg.
+
+
+## Editor visual — 16/10/2026
+
+20 testes de fluxo passaram em SQLite e 20 no PostgreSQL isolado: convergência OU, proteção entre gatilhos, duração e queda intermediária, umidade, espera persistente, cancelamento, ramificação, dado desconhecido, timeout sem repetição, ciclos, edição concorrente, permissões e CSRF. Build TypeScript/Vite aprovado. Prévia visual usa base isolada e adaptador simulado; nenhum novo sinal IR foi enviado.

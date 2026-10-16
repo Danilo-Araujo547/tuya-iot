@@ -105,3 +105,6 @@ Os seletores de sensor e período usam menus próprios com navegação por tecla
 
 
 O sensor real **Sensor temperatura Data Center** está cadastrado nas duas funções, e a TV Samsung vinculada está disponível no menu **Controle IR**. Volume − foi validado fisicamente pelo usuário. Consulte `docs/CLOUD-VALIDATION.md` para a evidência e `config/data-center.validated.json` para a configuração sem credenciais. A regra de exemplo continua desativada; o controle do ar-condicionado depende de seu próprio remote_id.
+
+
+Automações agora usam um editor visual de fluxo único. Consulte [Editor de fluxos](docs/WORKFLOWS.md).

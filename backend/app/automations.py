@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from .db import DB, Automation, AutomationRun, Device, State, Measurement, health, take_rate
+from .db import DB, Automation, AutomationRun, Workflow, Device, State, Measurement, health, take_rate
 from .security import authenticate
 from .controls import Action
 from .control_profiles import validate_action
@@ -106,6 +106,7 @@ def enable(rule_id:str,body:Switch,request:Request):
         rule=db.execute(select(Automation).where(Automation.id==rule_id).with_for_update()).scalar_one_or_none()
         if not rule:raise HTTPException(404,'Regra não encontrada')
         if body.enabled:
+            if db.get(Workflow, 'main'):raise HTTPException(409,'Use o editor visual para ativar o fluxo de automações')
             issues=ready(db,rule.definition)
             if issues:raise HTTPException(422,'; '.join(issues))
         if rule.enabled!=body.enabled:
@@ -159,7 +160,7 @@ def evaluate(db,rule,now):
         else:
             due=occurrence;reason='Horário atingido';runtime['last_schedule']=occurrence
     else:
-        device=db.get(Device,trigger['device_id']);state=db.get(State,(trigger['device_id'],'temperature'))
+        device=db.get(Device,trigger['device_id']);state=db.get(State,(trigger['device_id'],trigger.get('property','temperature')))
         max_age=device.config.get('expected_interval',300)*3 if device else 0
         online=db.get(State,(trigger['device_id'],'online'))
         offline=online and online.value is False and now-online.observed<max_age
@@ -172,7 +173,7 @@ def evaluate(db,rule,now):
                 runtime['since']=None;runtime['last_sample']=state.observed
                 samples=[(now,state.value)]
             else:
-                rows=db.execute(select(Measurement).where(Measurement.device_id==device.id,Measurement.property=='temperature',Measurement.observed>runtime.get('last_sample',0),Measurement.observed<=now,Measurement.observed>=now-max_age).order_by(Measurement.observed,Measurement.id).limit(2001)).scalars().all()
+                rows=db.execute(select(Measurement).where(Measurement.device_id==device.id,Measurement.property==trigger.get('property','temperature'),Measurement.observed>runtime.get('last_sample',0),Measurement.observed<=now,Measurement.observed>=now-max_age).order_by(Measurement.observed,Measurement.id).limit(2001)).scalars().all()
                 rows=[r for r in rows if r.time_known or (device.config.get('virtual') and trigger.get('allow_virtual'))]
                 samples=[(r.observed,r.value) for r in rows]
                 if len(samples)>2000:
@@ -207,7 +208,9 @@ def evaluate(db,rule,now):
 
 def tick(adapter,now=None):
     now=time.time() if now is None else now
-    with DB() as db:ids=[r.id for r in db.query(Automation).filter_by(enabled=True)]
+    with DB() as db:
+        if db.get(Workflow, 'main'):return
+        ids=[r.id for r in db.query(Automation).filter_by(enabled=True)]
     for identifier in ids:
         run_id=None
         try:

@@ -95,6 +95,31 @@ class AutomationRun(Base):
     __table_args__ = (UniqueConstraint("rule_id", "occurrence"),)
 
 
+class Workflow(Base):
+    __tablename__ = 'workflows'
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String, default='Meu ambiente')
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    graph: Mapped[dict] = mapped_column(JSON)
+    runtime: Mapped[dict] = mapped_column(JSON, default=dict)
+    updated: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class WorkflowRun(Base):
+    __tablename__ = 'workflow_runs'
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=uid)
+    revision: Mapped[int] = mapped_column(Integer)
+    trigger_id: Mapped[str] = mapped_column(String)
+    occurrence: Mapped[str] = mapped_column(String)
+    graph: Mapped[dict] = mapped_column(JSON)
+    state: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String, default='pendente', index=True)
+    created: Mapped[float] = mapped_column(Float, default=time.time, index=True)
+    updated: Mapped[float] = mapped_column(Float, default=time.time)
+    __table_args__ = (UniqueConstraint('revision', 'trigger_id', 'occurrence'),)
+
+
 class Session(Base):
     __tablename__ = "sessions"
     hash: Mapped[str] = mapped_column(String, primary_key=True)

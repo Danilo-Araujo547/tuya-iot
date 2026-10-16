@@ -20,7 +20,7 @@ def migrate():
         with engine.begin() as conn:
             conn.execute(text("SELECT pg_advisory_xact_lock(42916701)"))
             conn.execute(text("CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY)"))
-            for version, filename in [('001', '001_initial.sql'), ('002', '002_appearance.sql'), ('003', '003_automations.sql')]:
+            for version, filename in [('001', '001_initial.sql'), ('002', '002_appearance.sql'), ('003', '003_automations.sql'), ('004', '004_workflows.sql')]:
                 if not conn.execute(text("SELECT 1 FROM schema_migrations WHERE version=:version"), {'version': version}).first():
                     sql = (Path(__file__).parent.parent / 'migrations' / filename).read_text()
                     for statement in sql.split(';'):

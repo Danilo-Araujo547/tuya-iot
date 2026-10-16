@@ -53,3 +53,8 @@ Erros: 401 sem autenticação válida; 403 sem escopo ou CSRF/origem inválidos;
 Definições, tipos de gatilho, perfis e semântica de execução estão em `AUTOMATIONS.md`. A consulta `/status` inclui `health.automations`. Registros de comandos agora incluem `action`; `power` permanece para compatibilidade e é nulo em comandos de temperatura. Estados e medições distinguem horários de consulta sem origem conhecida; consultas sem timestamp não sustentam regras físicas de duração.
 
 O cadastro aceita também `profile: tuya_standard_ir` e `keys_enabled`. `POST /devices/{id}/control/discover` exige administrador, consulta os metadados na Tuya e salva a lista de teclas padrão. Comandos `type: ir_key` usam `value` string pertencente a essa lista. As capacidades retornam `keys`; o perfil de TV não expõe capacidades de potência discreta, temperatura ou status AC. `GET /devices/{id}/control` retorna a confirmação física registrada por tecla em `physical_tests`, quando houver evidência. Essa confirmação não representa o estado atual da TV.
+
+
+## Fluxo visual
+
+Contrato e semântica em [WORKFLOWS.md](WORKFLOWS.md). Novas rotas sob `/api/v1/automation-flow`.

@@ -7,7 +7,8 @@ import './style.css';
 import './temperature-range.css';
 import './navigation.css';
 import {GlassSelect} from './GlassSelect';
-import {AutomationPanel, ControlPanel} from './features';
+import {ControlPanel} from './features';
+import {WorkflowPanel} from './WorkflowPanel';
 import './features.css';
 
 type Reading = {property:string; value:number|boolean|string; unit:string; observed:number; source:string; stale:boolean; observation_time_known?:boolean};
@@ -257,7 +258,7 @@ function App(){
           {d.kind==='ir'&&<small>O infravermelho não confirma o estado físico.</small>}
         </article>;
       })}</section>}
-      {page==='automations'&&<AutomationPanel api={api} devices={devices}/>}
+      {page==='automations'&&<WorkflowPanel api={api} devices={devices}/>}
       {page==='control'&&<ControlPanel api={api} onRefresh={refresh}/>}
       {page==='diagnostics'&&<main className="spatial-window diagnostic-window"><section className="glass-well diagnostic">
         <div className="chart-heading"><div><p className="eyebrow">SAÚDE DA CONEXÃO</p><h2>Seu ambiente, conectado.</h2></div><Activity size={23}/></div>

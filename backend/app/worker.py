@@ -4,7 +4,7 @@ import signal
 import threading
 import time
 from sqlalchemy import delete, update
-from .db import DB, Device, Event, Command, Measurement, Session, AutomationRun, health
+from .db import DB, Device, Event, Command, Measurement, Session, AutomationRun, WorkflowRun, health
 from .events import ingest, process_one
 from .tuya import TuyaHTTP, DurablePulsar
 from .config import CALLS_PER_MINUTE, RECONCILE_SECONDS
@@ -59,6 +59,8 @@ def maintenance():
         db.execute(delete(Event).where(Event.status == "processed", Event.received < now - 90 * 86400))
         db.execute(delete(Command).where(Command.created < now - 180 * 86400))
         db.execute(delete(AutomationRun).where(AutomationRun.created < now - 180 * 86400))
+        db.execute(delete(WorkflowRun).where(WorkflowRun.created < now - 180 * 86400))
+        db.execute(update(WorkflowRun).where(WorkflowRun.status == 'executando', WorkflowRun.updated < now - 60).values(status='resultado desconhecido', updated=now))
         db.execute(update(AutomationRun).where(AutomationRun.status == 'em execução', AutomationRun.created < now - 120).values(status='resultado desconhecido'))
         db.execute(delete(Session).where(Session.expires < now))
         # An interrupted request must never be replayed automatically.
@@ -87,6 +89,8 @@ def main():
             if time.time() >= next_automation:
                 from .automations import tick
                 tick(api)
+                from .workflows import tick as tick_flow
+                tick_flow(api)
                 next_automation = time.time() + 5
             if time.time() >= next_sync:
                 sync.set()
