@@ -135,3 +135,7 @@ Validação: compilação TypeScript/Vite concluída; prévia isolada com contro
 ## Editor visual — 16/10/2026
 
 20 testes de fluxo passaram em SQLite e 20 no PostgreSQL isolado: convergência OU, proteção entre gatilhos, duração e queda intermediária, umidade, espera persistente, cancelamento, ramificação, dado desconhecido, timeout sem repetição, ciclos, edição concorrente, permissões e CSRF. Build TypeScript/Vite aprovado. Prévia visual usa base isolada e adaptador simulado; nenhum novo sinal IR foi enviado.
+
+### Fundos uniformes em toda a interface
+
+Removidos os gradientes restantes dos cards, teclas IR, diálogos, bordas, tela de login e mostrador. Os painéis usam cores uniformes, contornos simples e sombras reduzidas; a imagem de fundo permanece disponível. Não há gradientes CSS/SVG restantes no código de interface. Compilação TypeScript/Vite concluída; estilos computados da prévia confirmam ausência de background-image no painel IR, na borda e em todas as teclas. Nenhum comando foi enviado. Evidência: ir-flat-colors.jpg.
