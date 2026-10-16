@@ -113,6 +113,15 @@ def snapshot():
                        "observation_time_known": state.time_known and not device.config.get("cloud_snapshot_without_timestamp", False)}
                       for state in states if state.device_id == device.id]
             online = next((s for s in values if s["property"] == "online"), None)
+            connectivity = "desconhecida" if not online or online["stale"] else ("online" if online["value"] else "offline")
+            for value in values:
+                if value['property'] in ('temperature', 'humidity'):
+                    reason = ('sensor_offline' if connectivity == 'offline' else
+                              'measurement_time_unknown' if not value['observation_time_known'] and not device.config.get('virtual', False) else
+                              'measurement_stale' if value['stale'] else None)
+                    value.update(stale=value['stale'] or reason is not None,
+                                 current=reason is None, freshness_reason=reason,
+                                 measurement_at=value['observed'] if value['observation_time_known'] else None)
             result.append({"id": device.id, "name": device.name,
                            "capabilities": sorted({m["property"] for m in device.config.get("properties", {}).values()}),
                            "controllable": device.config.get("command", {}).get("validated", False),
@@ -121,7 +130,9 @@ def snapshot():
                            "virtual": device.config.get("virtual", False),
                            "cloud_snapshot_without_timestamp": device.config.get("cloud_snapshot_without_timestamp", False) or any(not s['observation_time_known'] for s in values if s['property'] in ('temperature','humidity')),
                            "last_command": latest.get(device.id),
-                           "connectivity": "desconhecida" if not online or online["stale"] else ("online" if online["value"] else "offline"),
+                           "connectivity": connectivity,
+                           "online": None if connectivity == 'desconhecida' else connectivity == 'online',
+                           "connectivity_checked_at": online['observed'] if online else None,
                            "states": values})
         return result
 
@@ -130,6 +141,15 @@ def snapshot():
 def devices(request: Request):
     authenticate(request)
     return snapshot()
+
+
+@app.get(PREFIX + "/devices/{device_id}/connectivity")
+def device_connectivity(device_id: str, request: Request):
+    authenticate(request)
+    device = next((d for d in snapshot() if d['id'] == device_id), None)
+    if not device:
+        raise HTTPException(404, 'Dispositivo não encontrado')
+    return {key: device[key] for key in ('id', 'name', 'connectivity', 'online', 'connectivity_checked_at')}
 
 
 @app.post(PREFIX + "/devices/sync")

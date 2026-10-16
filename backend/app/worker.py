@@ -29,12 +29,14 @@ def reconcile(api, stop=None):
                 return
             continue
         at = time.time()
-        ingest({"devId": device.id, "ts": int(at * 1000), "status": detail.get("status", []),
-                '_cloud_query_without_time': any(not item.get('t') for item in detail.get('status', []))},
-               f"sync:{device.id}:{at}")
         if isinstance(detail.get("online"), bool):
             ingest({"bizCode": "online" if detail["online"] else "offline",
                     "bizData": {"devId": device.id}, "ts": int(at * 1000)}, f"sync-online:{device.id}:{at}")
+        # Offline API snapshots contain cached values, not new measurements.
+        if detail.get("online") is not False:
+            ingest({"devId": device.id, "ts": int(at * 1000), "status": detail.get("status", []),
+                    '_cloud_query_without_time': any(not item.get('t') for item in detail.get('status', []))},
+                   f"sync:{device.id}:{at}")
         if stop and stop.wait(60 / max(1, CALLS_PER_MINUTE) + 1):
             return
     health("reconcile", {"ok": failures == 0, "failures": failures, "at": time.time()})

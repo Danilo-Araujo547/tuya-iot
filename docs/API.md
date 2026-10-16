@@ -60,3 +60,11 @@ O cadastro aceita tambÃ©m `profile: tuya_standard_ir` e `keys_enabled`. `POST /d
 Contrato e semÃ¢ntica em [WORKFLOWS.md](WORKFLOWS.md). Novas rotas sob `/api/v1/automation-flow`.
 
 GET `/api/v1/notification-connections` e PUT `/api/v1/notification-connections/{channel}` configuram canais de notificaÃ§Ã£o, somente com sessÃ£o administrativa. [Contrato completo](NOTIFICATIONS.md).
+
+## Conectividade e validade das medições
+
+`GET /api/v1/devices/{id}/connectivity` exige sessão ou chave de integração de leitura. Retorna `id`, `name`, `connectivity` (`online`, `offline`, `desconhecida`), `online` (`true`, `false`, `null`) e `connectivity_checked_at` (UTC Unix; última informação de conectividade). Se a informação de conexão estiver desatualizada, retorna `online: null`, preservando o horário da última confirmação.
+
+`GET /api/v1/devices/{id}/state` e `GET /api/v1/devices` incluem os mesmos campos de conectividade. Para temperatura e umidade, cada estado informa `current`, `freshness_reason` e `measurement_at`. Quando offline: `current: false`, `stale: true`, `freshness_reason: sensor_offline`; o valor preservado representa a última leitura conhecida. `measurement_at: null` indica que a Tuya não informou o horário real da medição. O horário de consulta não comprova uma nova medição. Para sensores reais sem horário de origem, a leitura fica com `freshness_reason: measurement_time_unknown` e não é apresentada como atual.
+
+Reconciliações em que a Tuya retorna explicitamente `online: false` atualizam somente a conectividade, sem registrar as propriedades armazenadas na nuvem como novas medições. Registros antigos já persistidos não são apagados retroativamente.

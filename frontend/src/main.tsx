@@ -30,9 +30,9 @@ async function api<T>(path:string, init:RequestInit={}):Promise<T> {
   return response.json();
 }
 
-function Dial({temperature}:{temperature:number|undefined}) {
+function Dial({temperature,current=true}:{temperature:number|undefined;current?:boolean}) {
   const active = temperature === undefined ? -1 : Math.round(clamp((temperature+20)/80,0,1)*64);
-  return <div className="dial-wrapper" aria-label={'Temperatura atual: '+number(temperature)+' graus Celsius'}>
+  return <div className="dial-wrapper" aria-label={(current?'Temperatura atual: ':'Última temperatura conhecida: ')+number(temperature)+' graus Celsius'}>
     <svg viewBox="0 0 260 260" aria-hidden="true">
       {Array.from({length:65},(_,i)=>{
         const angle=(120+i*300/64)*Math.PI/180, major=i%5===0;
@@ -44,7 +44,7 @@ function Dial({temperature}:{temperature:number|undefined}) {
       <text x="64" y="257" textAnchor="middle" className="dial-limit">−20°</text>
       <text x="196" y="257" textAnchor="middle" className="dial-limit">60°</text>
     </svg>
-    <div className="dial-core"><Thermometer size={22}/><div className="dial-number">{number(temperature)}<sup>°C</sup></div><span>Temperatura atual</span></div>
+    <div className="dial-core"><Thermometer size={22}/><div className="dial-number">{number(temperature)}<sup>°C</sup></div><span>{current?'Temperatura atual':'Última leitura conhecida'}</span></div>
   </div>;
 }
 
@@ -65,11 +65,11 @@ function ExternalStat(){
   </div>;
 }
 
-function HumidityCard({reading}:{reading:Reading|undefined}){
+function HumidityCard({reading,offline=false}:{reading:Reading|undefined;offline?:boolean}){
   const value=reading?Number(reading.value):undefined;
   return <section className="glass-well humidity-card" aria-label="Umidade">
     <div className="humidity-heading"><span className="humidity-icon"><Droplets size={21}/></span><h2>Umidade</h2></div>
-    <div className="humidity-reading" aria-live="polite"><strong>{number(value)}<small>%</small></strong><span>{!reading?'Aguardando':reading.stale?'Dado antigo':'Na nuvem'}</span></div>
+    <div className="humidity-reading" aria-live="polite"><strong>{number(value)}<small>%</small></strong><span>{offline?'Sensor offline':!reading?'Aguardando':reading.stale?'Dado antigo':'Na nuvem'}</span></div>
     <div className="humidity-footer"><span>{reading?'Última consulta · '+clock(reading.observed):'Aguardando medição do sensor'}</span></div>
   </section>;
 }
@@ -215,14 +215,15 @@ function App(){
       {(page==='overview'||page==='history')&&<main className={'spatial-window '+(page==='history'?'history-view':'')}>
         {page==='overview'&&<section className="glass-well thermostat-panel">
           <div className="panel-header-tag"><span>Clima interno</span><div className="panel-sensor-select"><GlassSelect label="Sensor" value={selected} onChange={setSelected} options={sensors.map(d=>({value:d.id,label:d.name}))}/></div></div>
-          <Dial temperature={temperature?Number(temperature.value):undefined}/>
+          {device?.connectivity==='offline'&&<p className="sensor-offline" role="status">Sensor offline · última leitura conhecida</p>}
+          <Dial temperature={temperature?Number(temperature.value):undefined} current={!!temperature&&!temperature.stale&&temperature.observation_time_known!==false&&device?.connectivity!=='offline'}/>
           <h2 className="sensor-name">{device?.name||'Aguardando sensor'}</h2>
           <div className="reading-origin"><Cloud size={13}/>{device?.virtual?'Valores simulados na Tuya Cloud':'Valores recebidos da Tuya Cloud'}</div>
           <div className="mini-stats"><div><span>Umidade</span><strong>{number(humidity?Number(humidity.value):undefined)}<small>%</small></strong></div><div><span>Consulta</span><strong>{latest?clock(latest):'—'}</strong></div><ExternalStat/></div>
-          <p className="freshness">{temperature?.stale||humidity?.stale?'A última consulta está desatualizada.':device?.cloud_snapshot_without_timestamp?'A API não informa o horário da medição.':'Horário da última atualização disponível.'}</p>
+          <p className="freshness">{device?.connectivity==='offline'?'Sensor offline. A temperatura exibida é o último valor salvo, sem confirmação atual.':device?.cloud_snapshot_without_timestamp?'A API não informa o horário da medição; a consulta não confirma uma nova leitura.':temperature?.stale||humidity?.stale?'A última leitura está desatualizada.':'Horário da última atualização disponível.'}</p>
         </section>}
         <div className="right-column">
-          {page==='overview'&&<div className="top-spectrum-grid"><TemperatureRangeCard deviceId={device?.id} updatedAt={temperature?.observed}/><HumidityCard reading={humidity}/></div>}
+          {page==='overview'&&<div className="top-spectrum-grid"><TemperatureRangeCard deviceId={device?.id} updatedAt={temperature?.observed}/><HumidityCard reading={humidity} offline={device?.connectivity==='offline'}/></div>}
           <section className="glass-well chart-well">
             <div className="chart-controls">
               <div className="chart-options"><div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div>

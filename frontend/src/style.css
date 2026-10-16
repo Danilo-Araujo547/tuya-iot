@@ -16,3 +16,4 @@ html,body{max-width:100%;overflow-x:clip}.chart-canvas{overflow:hidden}
 /* Keep scroll interaction available without visible scrollbar rails. */
 *,*::before,*::after{scrollbar-width:none}
 *::-webkit-scrollbar,*::before::-webkit-scrollbar,*::after::-webkit-scrollbar{display:none;width:0;height:0}
+.sensor-offline{color:#edc7a3;background:#8a603521;border:1px solid #d9a97640;border-radius:8px;padding:7px 10px;margin-top:14px;font-size:10px;line-height:1.5}
