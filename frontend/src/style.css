@@ -17,3 +17,4 @@ html,body{max-width:100%;overflow-x:clip}.chart-canvas{overflow:hidden}
 *,*::before,*::after{scrollbar-width:none}
 *::-webkit-scrollbar,*::before::-webkit-scrollbar,*::after::-webkit-scrollbar{display:none;width:0;height:0}
 .sensor-offline{color:#edc7a3;background:#8a603521;border:1px solid #d9a97640;border-radius:8px;padding:7px 10px;margin-top:14px;font-size:10px;line-height:1.5}
+.offline-dot{background:#df927b}.chart-legend{flex-wrap:wrap;row-gap:7px}.chart-outages{font-size:10px;color:#e5bcac;line-height:1.7;margin:13px 0 0}.chart-outages summary{cursor:pointer}.chart-outages ul{padding-left:18px;margin-top:7px;max-height:130px;overflow:auto}.chart-outages p{font-size:9px;color:#ffffff90;margin-top:8px}

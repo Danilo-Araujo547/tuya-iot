@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Activity, ArrowUpRight, CalendarClock, Snowflake, Check, ChevronDown, Cloud, Droplets, History, ImagePlus, LayoutDashboard, LogOut, Menu, Radio, RefreshCw, ShieldCheck, Thermometer, Upload, X} from 'lucide-react';
-import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid} from 'recharts';
+import {ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea} from 'recharts';
 import {scenes, useBackground} from './backgrounds';
 import {temperatureScale} from './temperatureScale';
 import './style.css';
@@ -16,6 +16,7 @@ type Reading = {property:string; value:number|boolean|string; unit:string; obser
 type Device = {id:string; name:string; capabilities:string[]; controllable:boolean; kind:string; connectivity:string; states:Reading[]; virtual?:boolean; cloud_snapshot_without_timestamp?:boolean};
 type Point = {time:number; value:number|null; min?:number|null; max?:number|null};
 type ChartPoint = {time:number; temperature:number|null; humidity:number|null};
+type Outage = {start:number;end:number};
 type Diagnostics = {tuya_connected:boolean; pending:number; dead:number; commands_unknown:number; oldest_pending:number|null; http_calls_window:number; health:Record<string, Record<string, unknown>>};
 let csrf = '';
 const time = (epoch:number) => new Date(epoch*1000).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
@@ -145,6 +146,7 @@ function App(){
   const [devices,setDevices]=useState<Device[]>([]), [page,setPage]=useState('overview'), [connected,setConnected]=useState(false);
   const [period,setPeriod]=useState(1), [selected,setSelected]=useState(''), [mode,setMode]=useState('both');
   const [points,setPoints]=useState<ChartPoint[]>([]), [historyLoading,setHistoryLoading]=useState(false), [chartError,setChartError]=useState('');
+  const [outages,setOutages]=useState<Outage[]>([]),[historyWindow,setHistoryWindow]=useState<[number,number]>([0,1]);
   const [diagnostics,setDiagnostics]=useState<Diagnostics|null>(null);
   const [syncing,setSyncing]=useState(false), [imageFailed,setImageFailed]=useState(false);
   const generation=useRef(0);
@@ -181,14 +183,18 @@ function App(){
     try{
       const query=(property:string)=>new URLSearchParams({property,start:start.toISOString(),end:end.toISOString(),aggregation:'hour'});
       const [temp,humidity]=await Promise.all([
-        api<{points:Point[]}>('/devices/'+encodeURIComponent(selected)+'/history?'+query('temperature')),
+        api<{points:Point[];offline_intervals?:Outage[]}>('/devices/'+encodeURIComponent(selected)+'/history?'+query('temperature')),
         api<{points:Point[]}>('/devices/'+encodeURIComponent(selected)+'/history?'+query('humidity'))
       ]);
       const combined=new Map<number,ChartPoint>();
       temp.points.forEach(p=>combined.set(p.time,{time:p.time,temperature:p.value,humidity:null}));
       humidity.points.forEach(p=>combined.set(p.time,{...(combined.get(p.time)||{time:p.time,temperature:null,humidity:null}),humidity:p.value}));
-      if(generation.current===id)setPoints([...combined.values()].sort((a,b)=>a.time-b.time));
-    }catch(e){if(generation.current===id){setPoints([]);setChartError((e as Error).message)}}
+      const gaps=temp.offline_intervals||[];
+      combined.forEach(p=>{if(gaps.some(g=>p.time>=g.start&&p.time<g.end)){p.temperature=null;p.humidity=null}});
+      // A null marker breaks the line even when an outage falls between hourly buckets.
+      gaps.forEach(g=>{const at=(g.start+g.end)/2;combined.set(at,{time:at,temperature:null,humidity:null})});
+      if(generation.current===id){setPoints([...combined.values()].sort((a,b)=>a.time-b.time));setOutages(gaps);setHistoryWindow([start.getTime()/1000,end.getTime()/1000])}
+    }catch(e){if(generation.current===id){setPoints([]);setOutages([]);setChartError((e as Error).message)}}
     finally{if(generation.current===id)setHistoryLoading(false)}
   },[selected,period,logged]);
   useEffect(()=>{void loadHistory();const timer=setInterval(()=>void loadHistory(),60000);return()=>{clearInterval(timer);generation.current++}},[loadHistory]);
@@ -228,16 +234,18 @@ function App(){
             <div className="chart-controls">
               <div className="chart-options"><div className="chart-filters" aria-label="Medições no gráfico">{[['both','Tudo'],['temperature','Temp.'],['humidity','Umid.']].map(([key,label])=><button aria-pressed={mode===key} key={key} className={mode===key?'active':''} onClick={()=>setMode(key)}>{label}</button>)}</div>
               <div className="period-selector" aria-label="Período do histórico">{[1,7,30].map(p=><button key={p} aria-pressed={period===p} className={period===p?'active':''} onClick={()=>setPeriod(p)}>{p===1?'24h':p+'d'}</button>)}</div></div></div>
-            {chartError?<div className="chart-empty" role="alert">{chartError}</div>:!hasPoints?<div className="chart-empty">{historyLoading?'Carregando histórico…':'As medições aparecerão aqui assim que forem recebidas.'}</div>:
+            {chartError?<div className="chart-empty" role="alert">{chartError}</div>:!hasPoints&&!outages.length?<div className="chart-empty">{historyLoading?'Carregando histórico…':'As medições aparecerão aqui assim que forem recebidas.'}</div>:
               <div className="chart-canvas"><ResponsiveContainer width="100%" height={208}><LineChart data={points} margin={{top:14,right:4,bottom:0,left:0}}>
-                <CartesianGrid stroke="rgba(255,255,255,.09)" vertical={false}/><XAxis dataKey="time" tickFormatter={t=>clock(Number(t))} minTickGap={50} tick={{fontSize:10,fill:'rgba(255,255,255,.55)'}} axisLine={false} tickLine={false}/>
+                <CartesianGrid stroke="rgba(255,255,255,.09)" vertical={false}/><XAxis dataKey="time" type="number" domain={historyWindow} allowDataOverflow tickFormatter={t=>period===1?clock(Number(t)):time(Number(t))} minTickGap={50} tick={{fontSize:10,fill:'rgba(255,255,255,.55)'}} axisLine={false} tickLine={false}/>
                 <YAxis yAxisId="temperature" hide={mode==='humidity'} domain={tempScale.domain} ticks={tempScale.ticks} interval={0} tickFormatter={value=>number(Number(value))} tick={{fontSize:10,fill:'#f3c58e'}} axisLine={false} tickLine={false} tickMargin={6} width={44} unit="°"/>
                 <YAxis yAxisId="humidity" orientation="right" hide={mode==='temperature'} domain={[0,100]} tick={{fontSize:10,fill:'#91dcd8'}} axisLine={false} tickLine={false} width={40} unit="%"/>
+                {outages.map(g=><ReferenceArea key={g.start} yAxisId={mode==='humidity'?'humidity':'temperature'} x1={g.start} x2={g.end} fill="#df927b" fillOpacity={0.18} stroke="#df927b" strokeOpacity={0.5}/>)}
                 <Tooltip labelFormatter={t=>time(Number(t))} contentStyle={{background:'rgba(24,30,34,.96)',border:'1px solid rgba(255,255,255,.2)',borderRadius:14,fontSize:11,color:'#fff'}} formatter={(v:number,name:string)=>[number(v)+(name==='Temperatura'?' °C':'%'),name]}/>
                 {mode!=='humidity'&&<Line yAxisId="temperature" name="Temperatura" type="linear" dataKey="temperature" stroke="#f1c791" strokeWidth={2.3} dot={false} connectNulls={false} isAnimationActive={false}/>}
                 {mode!=='temperature'&&<Line yAxisId="humidity" name="Umidade" type="linear" dataKey="humidity" stroke="#88d7d4" strokeWidth={2.3} dot={false} connectNulls={false} isAnimationActive={false}/>}
               </LineChart></ResponsiveContainer></div>}
-            <div className="chart-legend">{mode!=='humidity'&&<span><i className="temp-dot"/>Temperatura</span>}{mode!=='temperature'&&<span><i className="humidity-dot"/>Umidade</span>}</div>
+            <div className="chart-legend">{mode!=='humidity'&&<span><i className="temp-dot"/>Temperatura</span>}{mode!=='temperature'&&<span><i className="humidity-dot"/>Umidade</span>}{outages.length>0&&<span><i className="offline-dot"/>Sensor offline</span>}</div>
+            {outages.length>0&&<details className="chart-outages"><summary>Perdas de conexão ({outages.length})</summary><ul>{outages.map(g=><li key={g.start}>{time(g.start)} → {g.end>=historyWindow[1]-1?'Até a última consulta do gráfico':time(g.end)}</li>)}</ul><p>Faixas indicam períodos com confirmação de sensor offline. Sem confirmação recente, a conexão é desconhecida.</p></details>}
             <p className="chart-note">Médias por hora · lacunas sem interpolação{device?.cloud_snapshot_without_timestamp?' · horários de consulta':''}</p>
           </section>
         </div>

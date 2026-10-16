@@ -68,3 +68,9 @@ GET `/api/v1/notification-connections` e PUT `/api/v1/notification-connections/{
 `GET /api/v1/devices/{id}/state` e `GET /api/v1/devices` incluem os mesmos campos de conectividade. Para temperatura e umidade, cada estado informa `current`, `freshness_reason` e `measurement_at`. Quando offline: `current: false`, `stale: true`, `freshness_reason: sensor_offline`; o valor preservado representa a última leitura conhecida. `measurement_at: null` indica que a Tuya não informou o horário real da medição. O horário de consulta não comprova uma nova medição. Para sensores reais sem horário de origem, a leitura fica com `freshness_reason: measurement_time_unknown` e não é apresentada como atual.
 
 Reconciliações em que a Tuya retorna explicitamente `online: false` atualizam somente a conectividade, sem registrar as propriedades armazenadas na nuvem como novas medições. Registros antigos já persistidos não são apagados retroativamente.
+
+### Períodos offline no histórico
+
+As respostas de histórico incluem `offline_intervals: [{start, end}]`, em UTC Unix, limitados ao intervalo solicitado. São reconstruídos a partir de registros de conectividade; notificações offline repetidas são unidas, e a confirmação expira após três intervalos esperados sem atualização. Assim, ausência de informação não é rotulada como queda confirmada. Início e fim representam horários registrados/consultados, não necessariamente o instante físico exato da desconexão.
+
+Agregados de temperatura/umidade excluem valores registrados durante períodos confirmados offline, inclusive snapshots antigos. Dados brutos são preservados para auditoria. O gráfico mostra faixas de perda, interrompe as linhas nesses períodos e oferece os horários em “Perdas de conexão”.

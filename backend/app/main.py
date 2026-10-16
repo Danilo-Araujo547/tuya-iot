@@ -2,6 +2,7 @@ import asyncio
 import json
 import secrets
 import time
+from bisect import bisect_right
 from datetime import datetime
 from contextlib import asynccontextmanager
 from argon2 import PasswordHasher
@@ -16,6 +17,7 @@ from .commands import submit, serialize
 from .tuya import TuyaHTTP
 from .weather import outdoor_weather
 from .appearance import router as appearance_router
+from .connectivity import offline_intervals
 from .controls import router as controls_router
 from .automations import router as automations_router
 from .workflows import router as workflow_router
@@ -198,6 +200,8 @@ def history(device_id: str, request: Request, property: str, start: datetime, en
         if not device:
             raise HTTPException(404, "Dispositivo não encontrado")
         time_basis = "cloud_query" if device.config.get("cloud_snapshot_without_timestamp", False) else "reported_or_received"
+        outages = offline_intervals(db, device, first, last)
+        outage_starts = [item['start'] for item in outages]
         query = select(Measurement).where(Measurement.device_id == device_id, Measurement.property == property,
                                            Measurement.observed >= first, Measurement.observed < last)
         if aggregation == "raw":
@@ -209,11 +213,14 @@ def history(device_id: str, request: Request, property: str, start: datetime, en
             rows = rows[:limit]
             return {"points": [{"id": r.id, "time": r.observed, "value": r.value, "unit": r.unit} for r in rows],
                     "next_cursor": {"cursor_time": rows[-1].observed, "cursor_id": rows[-1].id} if more else None,
-                    "time_basis": time_basis}
+                    "time_basis": time_basis, "offline_intervals": outages}
         # Max 2160 hourly buckets. Read in batches; don't materialize all raw history.
         step = 3600 if aggregation == "hour" else 86400
         buckets = {}
         for row in db.execute(query.execution_options(yield_per=1000)).scalars():
+            index = bisect_right(outage_starts, row.observed) - 1
+            if property in ('temperature', 'humidity') and index >= 0 and row.observed < outages[index]['end']:
+                continue
             if isinstance(row.value, bool) or not isinstance(row.value, (int, float)):
                 continue
             bucket = int(row.observed // step) * step
@@ -227,7 +234,8 @@ def history(device_id: str, request: Request, property: str, start: datetime, en
             points.append({"time": bucket, "value": item["sum"] / item["count"] if item else None,
                            "min": item["min"] if item else None, "max": item["max"] if item else None,
                            "count": item["count"] if item else 0})
-        return {"points": points, "next_cursor": None, "time_basis": time_basis}
+        return {"points": points, "next_cursor": None, "time_basis": time_basis,
+                "offline_intervals": outages}
 
 
 @app.post(PREFIX + "/devices/{device_id}/commands")
