@@ -108,3 +108,5 @@ O sensor real **Sensor temperatura Data Center** está cadastrado nas duas funç
 
 
 Automações agora usam um editor visual de fluxo único. Consulte [Editor de fluxos](docs/WORKFLOWS.md).
+
+Bloco de notificação disponível para WhatsApp, Telegram e webhook. Veja [Notificações](docs/NOTIFICATIONS.md).

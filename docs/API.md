@@ -58,3 +58,5 @@ O cadastro aceita também `profile: tuya_standard_ir` e `keys_enabled`. `POST /d
 ## Fluxo visual
 
 Contrato e semântica em [WORKFLOWS.md](WORKFLOWS.md). Novas rotas sob `/api/v1/automation-flow`.
+
+GET `/api/v1/notification-connections` e PUT `/api/v1/notification-connections/{channel}` configuram canais de notificação, somente com sessão administrativa. [Contrato completo](NOTIFICATIONS.md).

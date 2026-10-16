@@ -7,7 +7,7 @@ backup() {
   flock -n 9 || { printf 'Backup já em execução.\n' >&2; return 1; }
   if [ ! -f "$RESTIC_REPOSITORY/config" ]; then restic init; fi
   pg_dump --format=custom --serializable-deferrable --file=/tmp/tuya.dump
-  restic backup /tmp/tuya.dump --host tuya-server --tag database
+  restic backup /tmp/tuya.dump /var/lib/tuya-notifications --host tuya-server --tag database
   restic forget --host tuya-server --tag database --keep-daily 7 --keep-weekly 4 --prune
   restic check
   rm -f /tmp/tuya.dump

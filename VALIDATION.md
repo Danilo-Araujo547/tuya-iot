@@ -139,3 +139,8 @@ Validação: compilação TypeScript/Vite concluída; prévia isolada com contro
 ### Fundos uniformes em toda a interface
 
 Removidos os gradientes restantes dos cards, teclas IR, diálogos, bordas, tela de login e mostrador. Os painéis usam cores uniformes, contornos simples e sombras reduzidas; a imagem de fundo permanece disponível. Não há gradientes CSS/SVG restantes no código de interface. Compilação TypeScript/Vite concluída; estilos computados da prévia confirmam ausência de background-image no painel IR, na borda e em todas as teclas. Nenhum comando foi enviado. Evidência: ir-flat-colors.jpg.
+
+
+## Bloco Notificação — 16/10/2026
+
+Suíte completa: 110 testes aprovados, 3 específicos de PostgreSQL ignorados nessa execução SQLite. Os 18 casos de notificações passaram também no PostgreSQL isolado: contratos WhatsApp/Telegram/webhook, destinos, 401/503/500, timeout sem repetição, fluxo só de notificação, continuidade após aceitação, interrupção da cadeia após erro, proteção de tokens, CSRF e permissões. Build TypeScript/Vite aprovado. Interface conferida no desktop e largura móvel sem transbordamento. API local autenticada e novo bundle verificados por HTTPS. Nenhum envio real a WhatsApp, Telegram ou webhook foi executado.

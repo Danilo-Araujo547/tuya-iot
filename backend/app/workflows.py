@@ -15,6 +15,7 @@ from .automations import Trigger, RuleAction, admin, evaluate
 from .security import authenticate
 from .control_profiles import validate_action
 from .commands import submit_action
+from .notifications import Notification, notification_issues, send_notification
 
 router = APIRouter(prefix='/api/v1/automation-flow')
 ACTIVE = ('pendente', 'aguardando', 'executando')
@@ -49,13 +50,13 @@ class Position(BaseModel):
 
 class Node(BaseModel):
     id: str = Field(pattern=r'^[A-Za-z0-9_-]{1,80}$')
-    kind: Literal['trigger', 'delay', 'condition', 'action']
+    kind: Literal['trigger', 'delay', 'condition', 'action', 'notification']
     label: str = Field(min_length=1, max_length=100)
     position: Position
     data: dict
     @model_validator(mode='after')
     def config(self):
-        model = {'trigger': FlowTrigger, 'delay': Delay, 'condition': Condition, 'action': RuleAction}[self.kind]
+        model = {'trigger': FlowTrigger, 'delay': Delay, 'condition': Condition, 'action': RuleAction, 'notification': Notification}[self.kind]
         self.data = model.model_validate(self.data).model_dump()
         return self
 
@@ -127,7 +128,7 @@ def sample(db, data, now):
 
 def issues(db, graph):
     problems = []; active = set(); nodes = {n['id']: n for n in graph['nodes']}
-    triggers = [n for n in graph['nodes'] if n['kind'] == 'trigger' and any(nodes[k]['kind'] == 'action' for k in reachable(graph, n['id']))]
+    triggers = [n for n in graph['nodes'] if n['kind'] == 'trigger' and any(nodes[k]['kind'] in ('action', 'notification') for k in reachable(graph, n['id']))]
     if not triggers: problems.append('Conecte um gatilho a uma ação')
     for trigger in triggers: active |= reachable(graph, trigger['id'])
     for identifier in active:
@@ -138,6 +139,8 @@ def issues(db, graph):
                 if not target: raise HTTPException(422, 'Dispositivo não cadastrado')
                 validate_action(target, {'type': data['type'], 'value': data['value']})
             except HTTPException as exc: problem = exc.detail
+        elif node['kind'] == 'notification':
+            problem = '; '.join(notification_issues(data)) or None
         elif node['kind'] == 'condition' or (node['kind'] == 'trigger' and data['kind'] != 'schedule'):
             prop = data.get('property', data.get('kind')); device = db.get(Device, data['device_id'])
             if not device or not any(p.get('property') == prop for p in device.config.get('properties', {}).values()): problem = 'Sensor não configurado para esta propriedade'
@@ -229,7 +232,7 @@ def tick(adapter, now=None):
         runtime = copy.deepcopy(flow.runtime or {}); graph = flow.graph
         count = db.query(WorkflowRun).filter(WorkflowRun.status.in_(ACTIVE)).count()
         for node in graph['nodes']:
-            if node['kind'] != 'trigger' or not any(n['kind'] == 'action' and n['id'] in reachable(graph, node['id']) for n in graph['nodes']): continue
+            if node['kind'] != 'trigger' or not any(n['kind'] in ('action', 'notification') and n['id'] in reachable(graph, node['id']) for n in graph['nodes']): continue
             data = node['data']; prop = data['kind']
             # Only this branch's source needs to be available; an unrelated stale sensor never blocks it.
             if prop != 'schedule' and sample(db, {**data, 'property': prop}, now) is None:
@@ -282,7 +285,7 @@ def advance(identifier, adapter, now):
                 run.status = 'bloqueada'; run.updated = now; return False
             matches = value > data['threshold'] if data['operator'] == 'above' else value < data['threshold']
             port = 'yes' if matches else 'no'
-        if node['kind'] == 'action':
+        if node['kind'] in ('action', 'notification'):
             # Persist the claim before any network call. Other workers cannot execute this run.
             state['running'] = node['id']; state['queue'] = [item, *queue]
             run.state = state; run.status = 'executando'; run.updated = now
@@ -297,18 +300,21 @@ def advance(identifier, adapter, now):
             active = db.get(Workflow, 'main')
             if not active or not active.enabled or active.revision != revision: raise HTTPException(409, 'Fluxo desativado ou alterado')
         if not take_rate('commands', 20): raise HTTPException(429, 'Limite de comandos atingido')
-        result = submit_action(action['device_id'], {'type': action['type'], 'value': action['value']}, f'flow:{identifier}:{node["id"]}', 'workflow:main', adapter, graph['cooldown_seconds'], continuation_prefix=f'flow:{identifier}:')
+        if node['kind'] == 'notification':
+            result = send_notification(action, {'run_id': identifier, 'node_id': node['id'], 'flow_name': active.name, 'revision': revision, 'timestamp': now})
+        else:
+            result = submit_action(action['device_id'], {'type': action['type'], 'value': action['value']}, f'flow:{identifier}:{node["id"]}', 'workflow:main', adapter, graph['cooldown_seconds'], continuation_prefix=f'flow:{identifier}:')
     except HTTPException as exc: result = {'status': 'bloqueada', 'detail': str(exc.detail)}
     except Exception as exc: result = {'status': 'resultado desconhecido', 'detail': type(exc).__name__}
     with DB.begin() as db:
         run = db.execute(select(WorkflowRun).where(WorkflowRun.id == identifier).with_for_update()).scalar_one()
         state = copy.deepcopy(run.state); state.pop('running', None)
         state['log'].append({'node': node['id'], **result, 'at': now})
-        if result['status'] == 'aceito pela Tuya':
+        if result['status'] in ('aceito pela Tuya', 'aceito pelo provedor'):
             finish(state, run.graph, node['id'], 'out', now); run.status = 'pendente'
         else: run.status = result['status']
         run.state = state; run.updated = now
-    return result['status'] == 'aceito pela Tuya'
+    return result['status'] in ('aceito pela Tuya', 'aceito pelo provedor')
 
 
 def finish(state, graph, identifier, port, now):

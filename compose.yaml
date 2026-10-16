@@ -15,8 +15,9 @@ x-app: &app
     TUYA_CALLS_PER_MINUTE: ${TUYA_CALLS_PER_MINUTE:-30}
     TUYA_RECONCILE_SECONDS: ${TUYA_RECONCILE_SECONDS:-3600}
     DEVICE_CONFIG: /config/devices.json
+    NOTIFICATION_CONFIG_DIR: /var/lib/tuya-notifications
   secrets: [database_url, admin_password_hash, tuya_access_id, tuya_access_secret]
-  volumes: [./config:/config:ro]
+  volumes: [./config:/config:ro, notifications:/var/lib/tuya-notifications]
   security_opt: [no-new-privileges:true]
   cap_drop: [ALL]
   read_only: true
@@ -84,6 +85,7 @@ services:
     secrets: [postgres_password, restic_password]
     volumes:
       - '${BACKUP_PATH:-./backups}:/repository'
+      - notifications:/var/lib/tuya-notifications:ro
     tmpfs: [/tmp]
     depends_on:
       db: {condition: service_healthy}
@@ -99,3 +101,4 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+  notifications:

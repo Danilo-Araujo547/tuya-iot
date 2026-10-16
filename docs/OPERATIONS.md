@@ -51,3 +51,7 @@ A migração 002 cria `appearance` e `wallpapers`. A primeira mantém a escolha 
 A migração 003 acrescenta definições e runtime de regras, execuções auditadas, comandos genéricos e indicação de horário de medição conhecido. Reinicie API e worker depois de aplicá-la. O motor roda no worker e mantém `health.automations` atualizado; uma interface aberta não é necessária. Não execute um segundo agendador externo para as mesmas regras. Locks de linha e ocorrências únicas protegem a avaliação contra dois workers concorrentes, mas a instalação de referência continua com uma única instância.
 
 Regras e auditoria são incluídas no backup do banco. Após restauração, revise regras habilitadas antes de retomar o worker: suas configurações e estado são recuperados junto com os demais dados. Execuções ou comandos interrompidos não são retomados automaticamente. Consulte `AUTOMATIONS.md` para regras de duração, agenda, rearme, resultados desconhecidos e configuração de um dispositivo combinado.
+
+## Conexões de notificação
+
+API e worker compartilham um volume privado gravável para as conexões de WhatsApp, Telegram e webhook. O backup Restic agora inclui esse volume além do dump. Consulte [NOTIFICATIONS.md](NOTIFICATIONS.md) para restauração e variáveis de ambiente.

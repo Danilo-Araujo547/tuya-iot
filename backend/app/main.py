@@ -19,6 +19,7 @@ from .appearance import router as appearance_router
 from .controls import router as controls_router
 from .automations import router as automations_router
 from .workflows import router as workflow_router
+from .notifications import router as notification_router
 from .control_profiles import capabilities
 
 
@@ -36,6 +37,7 @@ app.include_router(appearance_router)
 app.include_router(controls_router)
 app.include_router(automations_router)
 app.include_router(workflow_router)
+app.include_router(notification_router)
 
 
 @app.get(PREFIX + "/weather/current")

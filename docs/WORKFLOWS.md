@@ -28,3 +28,5 @@ Arestas: {id, source, target, port:out|yes|no}. Condições exigem yes/no; demai
 Mutações exigem administrador e CSRF. Chaves de integração só consultam. Migração 004_workflows.sql incluída. Backup PostgreSQL também preserva os fluxos e esperas. Auditoria mantida por 180 dias.
 
 O bloco Ação apresenta todos os botões IR habilitados diretamente numa grade. Cada botão seleciona o comando a salvar; não transmite ao clicar. Capacidades de energia, temperatura, modos e ventilação aparecem quando validadas. Cada nó envia um comando; encadeie nós para uma sequência.
+
+O bloco Notificação pode enviar texto por WhatsApp, Telegram ou webhook e pode terminar o fluxo. Consulte [NOTIFICATIONS.md](NOTIFICATIONS.md) para conexões privadas e tratamento de falhas.
