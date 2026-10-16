@@ -130,3 +130,7 @@ Integrados os refinamentos visuais de `codex/menu-e-papeis-de-parede` à main, p
 Na tela de IR, removidos o cabeçalho externo e a lista permanente de dispositivos. O painel central mantém seleção do controle e comandos; uma engrenagem discreta abre cadastro, aparelhos cadastrados, edição, consultas à Tuya e histórico. Resultados e erros das consultas aparecem no diálogo de configuração quando ele está aberto. A tela sem aparelhos mantém caminho para cadastro.
 
 Validação: compilação TypeScript/Vite concluída; prévia isolada com controle de TV fictício, sem conexão de comandos, conferindo apenas um painel central, ausência do cabeçalho/lista externa, abertura de configurações, acesso à edição e cancelamento, e visualização em 390px. Nenhum comando IR ou atualização de cadastro foi enviado. Evidências: ir-clean-control.jpg e ir-clean-settings-mobile.jpg.
+
+### Fundos uniformes em toda a interface
+
+Removidos os gradientes restantes dos cards, teclas IR, diálogos, bordas, tela de login e mostrador. Os painéis usam cores uniformes, contornos simples e sombras reduzidas; a imagem de fundo permanece disponível. Não há gradientes CSS/SVG restantes no código de interface. Compilação TypeScript/Vite concluída; estilos computados da prévia confirmam ausência de background-image no painel IR, na borda e em todas as teclas. Nenhum comando foi enviado. Evidência: ir-flat-colors.jpg.

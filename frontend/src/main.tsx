@@ -33,12 +33,11 @@ function Dial({temperature}:{temperature:number|undefined}) {
   const active = temperature === undefined ? -1 : Math.round(clamp((temperature+20)/80,0,1)*64);
   return <div className="dial-wrapper" aria-label={'Temperatura atual: '+number(temperature)+' graus Celsius'}>
     <svg viewBox="0 0 260 260" aria-hidden="true">
-      <defs><linearGradient id="dial-glow"><stop stopColor="#80cfef"/><stop offset=".5" stopColor="#b3e5de"/><stop offset="1" stopColor="#f4bb75"/></linearGradient></defs>
       {Array.from({length:65},(_,i)=>{
         const angle=(120+i*300/64)*Math.PI/180, major=i%5===0;
         const outer=121, inner=major?108:113;
         return <line key={i} x1={130+Math.cos(angle)*inner} y1={130+Math.sin(angle)*inner} x2={130+Math.cos(angle)*outer} y2={130+Math.sin(angle)*outer}
-          stroke={i<=active?'url(#dial-glow)':'rgba(255,255,255,.22)'} strokeWidth={major?2.7:1.8} strokeLinecap="round"/>;
+          stroke={i<=active?'#c2d6d1':'rgba(255,255,255,.22)'} strokeWidth={major?2.7:1.8} strokeLinecap="round"/>;
       })}
       <circle cx="130" cy="130" r="98" fill="none" stroke="rgba(255,255,255,.08)"/>
       <text x="64" y="257" textAnchor="middle" className="dial-limit">−20°</text>
