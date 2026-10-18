@@ -273,10 +273,10 @@ function Login({onLogin}:{onLogin:()=>void}){
     try{const data=await api<{csrf_token:string}>('/auth/login',{method:'POST',body:JSON.stringify({username:'admin',password})});csrf=data.csrf_token;onLogin()}
     catch(e){setError((e as Error).message)}finally{setBusy(false)}
   }}>
-    <div className="login-logo"><Radio size={28}/></div><h1>Entre no seu espaço.</h1><p className="login-copy">O clima do seu ambiente, sob uma nova perspectiva.</p>
-    <label htmlFor="password">Senha do administrador</label><input id="password" type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/>
+    <h1>Entrar</h1>
+    <label htmlFor="password">Senha</label><input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/>
     {error&&<p role="alert" className="error">{error}</p>}
-    <button className="solid-button login-submit" disabled={busy}>{busy?'Entrando…':'Acessar ambiente'}<ArrowUpRight size={18}/></button><small><ShieldCheck size={13}/>Acesso protegido à sua rede interna</small>
+    <button className="solid-button login-submit" disabled={busy}>{busy?'Entrando…':'Entrar'}</button>
   </form></main>;
 }
 
