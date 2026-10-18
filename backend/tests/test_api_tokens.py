@@ -42,6 +42,8 @@ def test_automation_scope_is_separate_from_device_control(client,monkeypatch,cap
     assert client.post('/api/v1/automation-flow/validate',json=body,headers=flow_headers).status_code==200
     assert client.patch('/api/v1/automation-flow/enabled',json={'enabled':False,'revision':body['revision']},headers=flow_headers).status_code==200
     assert client.put('/api/v1/integrations/devices',json={'id':'no','name':'no'},headers=flow_headers).status_code==403
+    assert client.get('/api/v1/notification-connections',headers=flow_headers).status_code==403
+    assert client.put('/api/v1/notification-connections/webhook',json={'url':'https://example.com/hook'},headers=flow_headers).status_code==403
 
 
 def test_token_aliases_and_duplicate_name(client,monkeypatch,capsys):

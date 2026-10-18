@@ -13,7 +13,6 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, SecretStr, model_validator
-from .automations import admin
 from .security import authenticate
 from .config import secret
 
@@ -98,7 +97,8 @@ def list_connections(request: Request):
 
 @router.put('/{channel}')
 def save_connection(channel: Channel, body: ConnectionBody, request: Request):
-    admin(request)
+    if authenticate(request) != 'admin':
+        raise HTTPException(403, 'Somente o administrador pode configurar conexões')
     cfg = connection(channel)
     url = DEFAULTS['telegram'] if channel == 'telegram' else body.url or cfg.get('url', '')
     if not valid_url(url): raise HTTPException(422, 'Informe a URL da conexão')
