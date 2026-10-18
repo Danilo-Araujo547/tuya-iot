@@ -34,6 +34,32 @@ def get_appearance(request: Request):
         return serialized(db)
 
 
+@router.get('/public')
+def public_appearance(response: Response):
+    response.headers['Cache-Control'] = 'no-store'
+    with DB() as db:
+        preference = db.get(Appearance, 'dashboard')
+        selected = preference.selected if preference else 'solar'
+        wallpapers = []
+        if selected not in PRESETS and db.get(Wallpaper, selected):
+            wallpapers.append({'id': selected, 'name': '',
+                               'url': '/api/v1/appearance/public/wallpapers/' + selected})
+        return {'selected': selected, 'wallpapers': wallpapers}
+
+
+@router.get('/public/wallpapers/{identifier}')
+def public_image(identifier: str):
+    with DB() as db:
+        preference = db.get(Appearance, 'dashboard')
+        if not preference or preference.selected != identifier:
+            raise HTTPException(404, 'Imagem não encontrada')
+        row = db.get(Wallpaper, identifier)
+        if not row:
+            raise HTTPException(404, 'Imagem não encontrada')
+        return Response(content=row.image, media_type='image/jpeg', headers={
+            'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+
+
 class Choice(BaseModel):
     id: str = Field(min_length=1, max_length=64)
 

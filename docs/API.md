@@ -20,6 +20,8 @@ Integrações usam `Authorization: Bearer TOKEN`. Gere tokens pelo CLI `create-t
 | GET | `/commands/{id}` | Consulta da execução; chave de integração lê somente seus próprios comandos |
 | GET | `/status` | Conexão, ingestão, fila, falhas, chamadas no minuto e worker |
 | GET | `/appearance` | Fundo selecionado e galeria salva; exige autenticação |
+| GET | `/appearance/public` | Fundo global selecionado para a tela de login, sem autenticação; retorna somente a imagem ativa, sem a galeria |
+| GET | `/appearance/public/wallpapers/{id}` | JPEG público somente enquanto a imagem estiver selecionada como fundo global; sem cache |
 | PUT | `/appearance` | Administrador com sessão e CSRF: seleciona um padrão ou imagem salva com `{"id":"..."}` |
 | POST | `/appearance/wallpapers` | Administrador com sessão e CSRF: corpo JPEG, `Content-Type: image/jpeg`, até 3 MB; persiste a imagem e a seleciona |
 | GET | `/appearance/wallpapers/{id}` | JPEG autenticado, cache privado; URLs e IDs estáveis |

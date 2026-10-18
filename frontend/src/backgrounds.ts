@@ -12,13 +12,13 @@ export function useBackground(logged:boolean,csrf:string) {
   const [preference,setPreference]=useState<Appearance>(initial),[storageError,setStorageError]=useState(''),[saving,setSaving]=useState(false);
   const busy=useRef(false),revision=useRef(0);
   async function request(init:RequestInit={}){
-    const response=await fetch('/api/v1/appearance'+(init.method==='POST'?'/wallpapers':''),{...init,credentials:'same-origin',headers:{'X-CSRF-Token':csrf,...init.headers}});
+    const path=init.method==='POST'?'/wallpapers':!logged&&!init.method?'/public':'';
+    const response=await fetch('/api/v1/appearance'+path,{...init,credentials:'same-origin',headers:{'X-CSRF-Token':csrf,...init.headers}});
     if(response.status===401)window.dispatchEvent(new Event('session-expired'));
     if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.detail||'Não foi possível salvar o papel de parede no servidor.')}
     return response.json() as Promise<Appearance>;
   }
   useEffect(()=>{
-    if(!logged){setPreference(initial);return}
     let active=true;
     const load=async()=>{
       if(busy.current)return;

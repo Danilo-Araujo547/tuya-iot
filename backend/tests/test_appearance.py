@@ -59,3 +59,24 @@ def test_gallery_limit_keeps_existing_images(logged):
     result=logged.post('/api/v1/appearance/wallpapers',content=jpeg(),headers={'Content-Type':'image/jpeg'})
     assert result.status_code==409
     assert logged.get('/api/v1/appearance').json()['selected']=='solar'
+
+
+def test_login_uses_global_background_without_exposing_gallery(logged):
+    from app.main import app
+    with TestClient(app, base_url='https://testserver') as visitor:
+        assert visitor.get('/api/v1/appearance/public').json()=={'selected':'solar','wallpapers':[]}
+        saved=logged.post('/api/v1/appearance/wallpapers',content=jpeg(),headers={'Content-Type':'image/jpeg'})
+        identifier=saved.json()['selected']
+        public=visitor.get('/api/v1/appearance/public')
+        assert public.headers['cache-control']=='no-store'
+        assert public.json()['selected']==identifier
+        assert len(public.json()['wallpapers'])==1
+        url=public.json()['wallpapers'][0]['url']
+        assert visitor.get(url).headers['content-type']=='image/jpeg'
+        assert visitor.get('/api/v1/appearance').status_code==401
+        assert visitor.get('/api/v1/appearance/wallpapers/'+identifier).status_code==401
+        assert visitor.put('/api/v1/appearance',json={'id':'nordic'}).status_code==401
+        assert visitor.post('/api/v1/appearance/wallpapers',content=jpeg(),headers={'Content-Type':'image/jpeg'}).status_code==401
+        assert logged.put('/api/v1/appearance',json={'id':'nordic'}).status_code==200
+        assert visitor.get('/api/v1/appearance/public').json()=={'selected':'nordic','wallpapers':[]}
+        assert visitor.get(url).status_code==404
